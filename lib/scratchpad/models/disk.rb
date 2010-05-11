@@ -1,6 +1,9 @@
 # :nodoc: namespace
 module Scratchpad
 
+# :nodoc: namespace
+module Models
+
 
 # Untrusted disk model.
 #
@@ -54,6 +57,8 @@ class Disk
     raise "Out of bounds" if @block_count < start_block + block_count    
   end
   private :check_bounds
-end  # class Scratchpad::Disk
+end  # class Scratchpad::Models::Disk
+
+end  # namespace Scratchpad::Models
 
 end  # namespace Scratchpad
