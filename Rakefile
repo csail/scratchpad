@@ -10,7 +10,8 @@ begin
     gem.email = "victor@costan.us"
     gem.homepage = "http://github.com/costan/scratchpad"
     gem.authors = ["costan"]
-    # gem is a Gem::Specification... see http://www.rubygems.org/read/chapter/20 for additional settings
+    gem.add_development_dependency "fakefs", ">=0.2.1"
+    gem.add_development_dependency "jeweler",  ">=1.4.0"
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

@@ -1,4 +1,4 @@
- require 'openssl'
+require 'openssl'
 
 # :nodoc: namespace
 module Scratchpad
@@ -24,7 +24,7 @@ module Crypto
   # Returns a Hash with the following keys:
   #   :public:: the public key
   #   :private:: the private key
-  def self.asymmetric_key(serialized = nil)
+  def self.key_pair(serialized = nil)
     k = OpenSSL::PKey::RSA.new(serialized || 1024)
     { :public => (k.public? ? k.public_key : nil),
       :private => (k.private? ? k : nil) }
@@ -37,7 +37,7 @@ module Crypto
   #          public:: the public key to serialize
   #          private:: the private key corresponding to the public key; can be
   #                    nil if only the private key should be serialized
-  def self.save_asymmetric_keys(keys)
+  def self.save_key_pair(keys)
     (keys[:private] ? keys[:private] : keys[:public]).to_der
   end
   
@@ -51,38 +51,47 @@ module Crypto
     ossl_crypto_hash.digest data
   end
   
-  # Creates a CA (self-signed) certificate.
+  # Produces a certificate.
   #
   # Args:
-  #   keys:: a Hash with the following keys:
-  #          public:: the CA's public key
-  #          private:: the CA's private key
-  #   validity:: the certificate's validity, starting from now, in days
   #   distinguished_name:: the DN on the certificate, as a Hash (e.g.,
   #                        {'CN' => 'TEM CA', 'C' => 'US'}
+  #   validity:: the certificate's validity, starting from now, in days
+  #   ca_keys:: Hash with the following values:
+  #             :public:: the public part of the CA signing key pair
+  #             :private:: the private part of the CA signing key pair
+  #   ca_cert:: the CA's certificate; use nil to produce a root CA
+  #   public_key:: the key which is being certified; for a root CA, this should
+  #                be nil, as the key pair in ca_keys will sign itself
   #
-  # Returns a CA certificate.
-  def self.ca_cert(keys, validity, distinguished_name)
+  # Returns a certificate.
+  def self.cert(distinguished_name, validity, ca_keys,
+                ca_cert = nil, public_key = nil)
     now = Time.now
     cert = OpenSSL::X509::Certificate.new
     dn = OpenSSL::X509::Name.new(distinguished_name.to_a)
-    cert.subject = cert.issuer = dn
+    cert.subject = dn
+    cert.issuer = ca_cert ? ca_cert.subject : dn
     cert.not_before = now;
     cert.not_after = now + validity * 60 * 60 * 24;
-    cert.public_key = keys[:public]
+    cert.public_key = public_key || ca_keys[:public]
     cert.serial = 0
     cert.version = 2
     ef = OpenSSL::X509::ExtensionFactory.new
-    ef.subject_certificate = ef.issuer_certificate = cert
+    ef.subject_certificate = cert
+    ef.issuer_certificate = ca_cert || cert
     cert.extensions = [
-      ef.create_extension("basicConstraints", "CA:TRUE", true),
-      ef.create_extension("keyUsage", "cRLSign,keyCertSign", true),
-      ef.create_extension("nsCertType", "emailCA,sslCA"),
+      ca_cert ? ef.create_extension("basicConstraints", "CA:TRUE", true) :
+                ef.create_extension("basicConstraints", "CA:FALSE"),
+      ca_cert ? ef.create_extension("keyUsage", "cRLSign,keyCertSign", true) :
+                ef.create_extension("keyUsage", "digitalSignature,nonRepudiation,keyEncipherment,dataEncipherment,keyAgreement,keyCertSign,cRLSign", true),
+      ca_cert ? ef.create_extension("nsCertType", "emailCA,sslCA") :
+                ef.create_extension("nsCertType", "emailCA,sslCA,client,email,objsign,server"),
       ef.create_extension("subjectKeyIdentifier", "hash")
     ]
     cert.add_extension ef.create_extension("authorityKeyIdentifier",
                                            "keyid:always,issuer:always")
-    cert.sign keys[:private], OpenSSL::Digest::SHA1.new
+    cert.sign ca_keys[:private], OpenSSL::Digest::SHA1.new
     
     cert
   end
@@ -105,6 +114,17 @@ module Crypto
   # Returns the de-serialized certificate.
   def self.load_cert(serialized)
     OpenSSL::X509::Certificate.new serialized
+  end
+  
+  # Verifies a certificate using a set of trusted roots.
+  #
+  # Args:
+  #   cert:: the certificate to be verified
+  #   ca_certs:: certificates for CAs to be used as roots of trust
+  def self.verify_cert(cert, ca_certs)
+    store = OpenSSL::X509::Store.new
+    ca_certs.each { |ca_cert| store.add_cert ca_cert }
+    store.verify cert
   end
 
   # The OpenSSL cryptographic hashing engine.

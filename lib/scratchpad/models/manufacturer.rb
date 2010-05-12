@@ -12,16 +12,16 @@ class Manufacturer
   # Instantiates a new manufacturer.
   def initialize(attributes = {})
     if attributes[:key]
-      @ca_keys = Crypto.asymmetric_key attributes[:key]
+      @ca_keys = Crypto.key_pair attributes[:key]
     else
-      @ca_keys = Crypto.asymmetric_key
+      @ca_keys = Crypto.key_pair
     end
     
     if attributes[:cert]
       @ca_cert = Crypto.load_cert attributes[:cert]
     else
       # TODO(costan): customize the CA 
-      proto_cert = Crypto.ca_cert @ca_keys, 365, self.class.distinguished_name
+      proto_cert = Crypto.cert self.class.distinguished_name, 10 * 365, @ca_keys
       @ca_cert = Crypto.load_cert Crypto.save_cert(proto_cert)
     end
   end
@@ -30,7 +30,7 @@ class Manufacturer
   #
   # Returns a Hash whose keys are symbols and values are strings.
   def attributes
-    { :key => Crypto.save_asymmetric_keys(@ca_keys),
+    { :key => Crypto.save_key_pair(@ca_keys),
       :cert => Crypto.save_cert(@ca_cert) }
   end
   
@@ -52,7 +52,7 @@ class Manufacturer
     Manufacturer.new attributes
   end
   
-  # The DN in the manufacturer CA.
+  # The DN in the manufacturer's CA certificate.
   def self.distinguished_name
     {
       'CN' => 'Trusted Execution Module Development CA',
@@ -61,6 +61,16 @@ class Manufacturer
       'L' => 'Cambridge', 'ST' => 'Massachusetts', 'C' => 'US'
     }
   end
+
+  # Checks if a certificate was issued by this manufacturer.
+  #
+  # Args:
+  #   a
+  #
+  # Returns 
+  def valid_device_cert?(cert)
+    Crypto.verify_cert cert, [@ca_cert]
+  end
   
   # Manufactures a new FPGA and smart-card, which are paired.
   #
@@ -68,16 +78,16 @@ class Manufacturer
   #   :fpga:: the new FPGA
   #   :card:: the new smart-card
   def device_pair
-    endorsement_key = Crypto.asymmetric_keys
-    endorsement_cert = Crypto.cert(device_distinguished_name,
-                                   endorsement_key[:public],
-                                   @ca_cert, @ca_keys)
+    endorsement_key = Crypto.key_pair
+    endorsement_cert = Crypto.cert device_distinguished_name, 3 * 365,
+                                   @ca_keys, @ca_cert, endorsement_key[:public]
         
-    fpga = Fpga.new
+    fpga = Fpga.new :ecert => endorsement_cert, :ekey => endorsement_key
     card = Smartcard.new
     { :card => card, :fpga => fpga }
   end
   
+  # The DN in a trusted device certificate. 
   def device_distinguished_name
     {
       'CN' => 'Trusted Execution Module',
@@ -86,6 +96,7 @@ class Manufacturer
       'L' => 'Cambridge', 'ST' => 'Massachusetts', 'C' => 'US'
     }
   end
+  private :device_distinguished_name
 end  # class Scratchpad::Models::Manufacturer
 
 end  # namespace Scratchpad::Models
