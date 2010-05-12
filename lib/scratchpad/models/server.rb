@@ -7,7 +7,11 @@ module Models
 
 # Model for the high-performance trusted storage server.
 class Server
-  # 
+  # Instantiates a server model.
+  #
+  # Args:
+  #   fpga:: a trusted FPGA attached to this server
+  #   disk:: an untrusted disk providing the server's storage
   def initialize(fpga, disk, options = {})    
     @fpga = fpga
     @disk = disk
@@ -16,8 +20,6 @@ class Server
   end
   
   # Endorsement Certificate for the FPGA on the server.
-  #
-  # Returns a
   def endorsement_certificate
     @ecert
   end
@@ -25,14 +27,19 @@ class Server
   # Creates a session with a client.
   #
   # Args:
+  #   nonce:: short random string that prevents replay attacks
   #   encrypted_session_key:: the client-generated symmetric session key,
   #                           encrypted under the server's public
   #                           Endorsement Key
   #
-  # Returns a Server::Session object.
-  def session(encrypted_session_key)
+  # Returns a Hash with the following keys:
+  #   :nonce_hmac:: proof from the FPGA that the session was acknowledged
+  #   :session:: a Server::Session object
+  def session(nonce, encrypted_session_key)
     sid = 0  # TODO(costan): FPGA session allocation
-    Session.new @fpga, @disk, sid, encrypted_session_key
+    nonce_hmac = @fpga.establish_session sid, nonce, encrypted_session_key
+    server_session = Session.new @fpga, @disk, sid, encrypted_session_key
+    { :nonce_hmac => nonce_hmac, :session => server_session }
   end
 end  # class Scratchpad::Server
 
@@ -41,7 +48,7 @@ class Server
 
 # A session between a trusted-storage server and a client.
 class Session  
-  def initialize(fpga, disk, sid, encrypted_session_key, options = {})
+  def initialize(fpga, disk, sid, options = {})
     @fpga = fpga
     @disk = disk
     @sid = sid    
