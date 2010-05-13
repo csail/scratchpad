@@ -41,6 +41,29 @@ module Crypto
     (keys[:private] ? keys[:private] : keys[:public]).to_der
   end
   
+  # Encrypts a string with a public key.
+  #
+  # Args:
+  #   public_key:: the public key to encrypt with
+  #   data:: the string to encrypt
+  #   
+  # Returns a string 
+  def self.pki_encrypt(public_key, data)
+    public_key.public_encrypt data, OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING
+  end
+
+  # Decrypts a string with a private key.
+  #
+  # Args:
+  #   public_key:: the public key to encrypt with
+  #   data:: the string to encrypt
+  #   
+  # Returns a string 
+  def self.pki_decrypt(private_key, encrypted_data)
+    private_key.private_decrypt encrypted_data,
+                                OpenSSL::PKey::RSA::PKCS1_OAEP_PADDING
+  end
+
   # Computes the HMAC for a bunch of data and a key.
   def self.hmac(key, data)
     OpenSSL::HMAC.digest ossl_crypto_hash, key, data

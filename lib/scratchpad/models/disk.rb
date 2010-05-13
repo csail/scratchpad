@@ -59,8 +59,9 @@ class Disk
   def write_blocks(start_block, block_count, data)
     check_bounds start_block, block_count
     raise "Wrong data buffer size" if data.length != block_count * block_size
-    0.upto(block_count - 1) do |block|
-      @blocks[start_block + block] = data[block_size * (start_block + i), block_size]
+    0.upto(block_count - 1) do |i|
+      @blocks[start_block + i] =
+          data[block_size * (start_block + i), block_size]
     end      
   end
   

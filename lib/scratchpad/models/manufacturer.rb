@@ -72,6 +72,11 @@ class Manufacturer
     Crypto.verify_cert cert, [@ca_cert]
   end
   
+  # The manufacturer's CA certificate.
+  def root_certificate
+    @ca_cert
+  end
+  
   # Manufactures a new FPGA and smart-card, which are paired.
   #
   # Returns: a Hash with the following keys:

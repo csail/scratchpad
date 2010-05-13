@@ -53,6 +53,16 @@ class Session
     @disk = disk
     @sid = sid    
   end
+
+  # The number of blocks available on the disk.
+  def block_count
+    @disk.block_count
+  end
+  
+  # The size of a disk block. All transfers work on blocks.
+  def block_size
+    @disk.block_size
+  end
   
   # Read operation.
   #
@@ -90,7 +100,7 @@ class Session
   #   :hmacs:: an array of HMACs, one per block, confirming the write
   #
   # Raises an exception if something goes wrong.
-  def write_blocks(start_block, block_count, nonce, data)
+  def write_blocks(nonce, start_block, block_count, data)
     # TODO(costan): Merkle tree stuff
     
     hmacs = (0...block_count).map do |i|

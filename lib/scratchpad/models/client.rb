@@ -8,21 +8,27 @@ module Models
 # Model for the high-performance trusted storage client.
 class Client
   # Creates a new client session to the given server.
-  def initialize(server, options = {})    
+  #
+  # Args:
+  #   server:: 
+  def initialize(server, root_certificate, options = {})
     server_ecert = server.endorsement_certificate
-    # TODO(costan): verify endorsement certificate
+    unless Crypto.verify_cert(server_ecert, [root_certificate])
+      raise "Invalid server Endorsement Certificate"      
+    end
       
     server_pubek = server_ecert.public_key
     nonce = Crypto.nonce
     @session_key = Crypto.hmac_key
-    response = server.session Crypto.pki_encrypt(server_pubek, @session_key)
-    unless response[:nonce_hmac] == Crypto.hmac(session_key, nonce)
+    encrypted_session_key = Crypto.pki_encrypt server_pubek, @session_key
+    response = server.session nonce, encrypted_session_key
+    unless response[:nonce_hmac] == Crypto.hmac(@session_key, nonce)
       raise "Invalid session acknowledgement"
     end
     @session = response[:session]
     
-    @block_size = server.block_size
-    @block_count = server.block_count    
+    @block_size = @session.block_size
+    @block_count = @session.block_count    
   end
     
   # The size of a storage block. Operations are atomic at the block level.
@@ -65,7 +71,7 @@ class Client
   #
   # Raises an exception if something goes wrong.
   def write_blocks(start_block, block_count, data)
-    nonce = Crpyto.nonce
+    nonce = Crypto.nonce
     response = @session.write_blocks nonce, start_block, block_count, data
     validate_hmacs nonce, start_block, block_count, data, response[:hmacs]
   end

@@ -37,7 +37,8 @@ class Fpga
   #
   # Returns the HMAC of the given nonce under the session key.
   def establish_session(session_id, nonce, encrypted_session_key)
-    session_key = @endorsement_key.decrypt encrypted_session_key
+    session_key = Crypto.pki_decrypt @endorsement_key[:private],
+                                     encrypted_session_key
     @session_keys[session_id] = session_key
     Crypto.hmac session_key, nonce
   end
@@ -79,9 +80,9 @@ class Fpga
   #   data:: the block's contents
   #
   # Returns: HMAC(Digest(data) || block_number || nonce)
-  def hmac(block_number, session_id, nonce, data)
+  def hmac_without_check!(block_number, session_id, nonce, data)
     session_key = @session_keys[session_id]
-    hmac_data = [[block_number].pack('N'), nonce, Crypto.crypto_hash(data)]
+    hmac_data = [Crypto.crypto_hash(data), [block_number].pack('N'), nonce].join
     Crypto.hmac session_key, hmac_data
   end
 end  # class Scratchpad::Models::Fpga
