@@ -48,6 +48,11 @@ module Crypto
     OpenSSL::Digest::Digest.new 'sha1'
   end
   private :crypto_hash
+  
+  # :nodoc: Make instance methods available to class.
+  class <<self
+    include Crypto
+  end
 end  # module Scratchpad::Crypto
 
 end  # namespace Scratchpad
