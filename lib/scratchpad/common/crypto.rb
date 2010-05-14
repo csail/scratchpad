@@ -68,6 +68,13 @@ module Crypto
   def self.hmac(key, data)
     OpenSSL::HMAC.digest ossl_crypto_hash, key, data
   end
+    
+  def self.hmac_for_block(block_number, block_contents, nonce, session_key)
+    hmac_data = [Crypto.crypto_hash(block_contents),
+                 [block_number].pack('N'), nonce].join
+    Crypto.hmac session_key, hmac_data    
+  end
+  
 
   # Computes a cryptographic hash of the given data.
   def self.crypto_hash(data)

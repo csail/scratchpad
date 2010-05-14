@@ -82,8 +82,7 @@ class Fpga
   # Returns: HMAC(Digest(data) || block_number || nonce)
   def hmac_without_check!(block_number, session_id, nonce, data)
     session_key = @session_keys[session_id]
-    hmac_data = [Crypto.crypto_hash(data), [block_number].pack('N'), nonce].join
-    Crypto.hmac session_key, hmac_data
+    Crypto.hmac_for_block block_number, data, nonce, session_key
   end
 end  # class Scratchpad::Models::Fpga
 

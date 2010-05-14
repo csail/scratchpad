@@ -81,8 +81,7 @@ class Session
     
     data = @disk.read_blocks start_block, block_count
     hmacs = (0...block_count).map do |i|
-      @fpga.hmac start_block + i, @sid, nonce,
-                 data[(start_block + i) * block_size, block_size]
+      @fpga.hmac start_block + i, @sid, nonce, data[i * block_size, block_size]
     end
     { :data => data, :hmacs => hmacs }
   end
@@ -105,7 +104,7 @@ class Session
     
     hmacs = (0...block_count).map do |i|
       @fpga.update start_block + i, @sid, nonce,
-                   data[(start_block + i) * block_size, block_size]      
+                   data[i * block_size, block_size]      
     end
     @disk.write_blocks start_block, block_count, data
     { :hmacs => hmacs }

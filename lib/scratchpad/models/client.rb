@@ -79,9 +79,9 @@ class Client
   # Validates the FPGA-issued HMACs for a read/write operation.
   def validate_hmacs(nonce, start_block, block_count, data, hmacs)
     0.upto(block_count - 1) do |i|
-      hmac_data = [Crypto.crypto_hash(data[i * block_size]),
-                   [start_block + i].pack('N'), nonce].join
-      unless hmacs[i] == Crypto.hmac(@session_key, hmac_data)
+      hmac = Crypto.hmac_for_block start_block + i,
+          data[i * block_size, block_size], nonce, @session_key      
+      unless hmacs[i] == hmac
         raise "Data authentication error"
       end
     end

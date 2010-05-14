@@ -18,7 +18,6 @@ class IntegrationTest < Test::Unit::TestCase
     @block = "\0" * @disk.block_size
     
     @client.write_blocks 1, 1, @block
-    assert_equal @block, @client.read_blocks(1, 1, @block),
-                 "Incorrect read"
+    assert_equal @block, @client.read_blocks(1, 1), "Incorrect read"
   end
 end

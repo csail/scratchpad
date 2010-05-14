@@ -44,7 +44,7 @@ class Disk
   # Returns a string of block_count * block_size bytes.
   def read_blocks(start_block, block_count)
     check_bounds start_block, block_count
-    @blocks[start_block, block_count].join
+    @blocks[start_block, block_count].map { |block| block || empty_block }.join
   end
   
   # Writes data to this disk.
@@ -60,8 +60,7 @@ class Disk
     check_bounds start_block, block_count
     raise "Wrong data buffer size" if data.length != block_count * block_size
     0.upto(block_count - 1) do |i|
-      @blocks[start_block + i] =
-          data[block_size * (start_block + i), block_size]
+      @blocks[start_block + i] = data[i * block_size, block_size]
     end      
   end
   
@@ -76,6 +75,12 @@ class Disk
     raise "Out of bounds" if @block_count < start_block + block_count    
   end
   private :check_bounds
+  
+  # The contents of an uninitialized block.
+  def empty_block
+    "\0" * block_size
+  end
+  private :empty_block
 end  # class Scratchpad::Models::Disk
 
 end  # namespace Scratchpad::Models
