@@ -1,6 +1,6 @@
 require 'helper.rb'
 
-class IntegrationTest < Test::Unit::TestCase
+class DiskTest < Test::Unit::TestCase
   Disk = Scratchpad::Models::Disk
   
   def setup
