@@ -24,7 +24,7 @@ module Scratchpad
 class HashTreeCache
   # Create a new hash tree cache.  
   def initialize(root_hash, capacity, leaf_count)
-    @leaf_count = leaf_count
+    @leaf_count = leaf_count  # NOTE: this will always be a power of 2
     @capacity = capacity
 
     @node_ids = Array.new capacity, nil
@@ -128,9 +128,38 @@ class HashTreeCache
     @verified[left_child] = @verified[right_child] = true
   end
   
-  # 
-  def update_value(entry, new_value, entry_path)
-    # TODO(costan): figure out how to represent the validation path
+  # Updates the cache to reflect a change in a leaf node value.
+  #
+  # Args:
+  #   entry:: the number of the entry holding the node to be updated (0-based)
+  #   new_value:: the new hash value for the entry
+  #   update_path:: array of numbers of cache entries holding all the nodes
+  #                 needed to update the root hash; entries at even positions
+  #
+  # Raises:
+  #   RuntimeError:: entry or one of the elements of root_path does not point to
+  #                  a valid cache entry
+  #   RuntimeError:: entry does not hold a leaf node
+  #   RuntimeError:: entry is not update_path[0]
+  #   RuntimeError:: 
+  def update_leaf_value(entry, new_value, update_path)
+    check_entry entry
+    root_path.each { |path_entry| check_entry path_entry }    
+    check_update_path entry, root_path
+    
+    @node_ids[entry] = new_value
+    visit_update_path update_path do |hot_entry, cold_entry, parent_entry|
+      hot_node = @node_ids[hot_entry]
+      cold_node = @node_ids[cold_entry]
+      parent_node = @node_ids[parent_entry]
+      @node_hashes[parent_entry] = if hot_node < cold_node
+        HashTree.node_hash parent_node, @node_hashes[hot_entry],
+                                        @node_hashes[cold_entry]
+      else
+        HashTree.node_hash parent_node, @node_hashes[cold_entry],
+                                        @node_hashes[hot_entry]      
+      end
+    end
   end
     
   # Checks that an entry number points to a valid entry in the cache.
@@ -150,6 +179,57 @@ class HashTreeCache
     end
   end
   private :check_entry
+  
+  # Verifies the validity of an update path.
+  #
+  # The return value is unspecified. 
+  #
+  # See update_leaf_value for a description of the path structure, verification
+  # process, and exceptions that can be raised.
+  def check_update_path(entry, update_path)
+    if update_path.first != entry
+      raise "Update path does not contain leaf node entry"
+    end
+    if update_path.first < @leaf_count
+      raise "Update path does not start at a leaf"
+    end
+    if @node_ids[update_path.last] != 1
+      raise "Update path does not contain root node"
+    end
+    
+    visit_update_path update_path do |hot_entry, cold_entry, parent_entry|
+      if (@node_ids[hot_entry] >> 1) != (@node_ids[cold_entry] >> 1) or
+         (@node_ids[hot_entry] & 1) == (@node_ids[cold_entry] & 1)
+        raise "Root path contains non-siblings #{hot_entry} and #{cold_entry}"
+      end
+      unless @node_ids[hot_entry] / 2 == @node_ids[parent_entry]
+        raise "Root path entry #{parent_entry} is not parent for #{hot_entry}"
+      end
+    end
+  end
+  private :check_update_path
+
+  # Yields every tree level in a path used to update a leaf's value.
+  #
+  # Args:
+  #   update_path:: array of cache entries, as described in update_leaf_value
+  #
+  # Yields:
+  #   hot_entry:: entry containing a node whose hash will be re-computed
+  #   cold_entry:: entry containing the sibling of the node in hot_entry
+  #   parent_entry:: entry containing the parent of the node in hot_entry
+  #
+  # The return value is not specified.
+  def visit_update_path(update_path)
+    0.upto(update_path.length / 2 - 1) do |i|
+      hot_entry = update_path[i * 2]  # Node to be updated.
+      cold_entry = update_path[i * 2 + 1]  # Sibling of the node to be updated.
+      parent_entry = update_path[i * 2 + 2]  # Parent of the node to be updated.
+    
+      yield hot_entry, cold_entry, parent_entry
+    end
+  end
+  private :visit_update_path
 end  # class Scratchpad::HashTreeCache
 
 end  # class Scratchpad
