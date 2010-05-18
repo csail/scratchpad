@@ -149,10 +149,12 @@ class HashTreeCache
   
     raise UnverifiedEntry, "Parent entry not validated" unless @verified[parent]
     unless @node_ids[left_child] == @node_ids[parent] * 2
-      raise "Incorrect left child entry"
+      raise InvalidUpdatePath,
+            "Incorrect left child entry #{left_child} for #{parent}"
     end
     unless @node_ids[right_child] == @node_ids[parent] * 2 + 1
-      raise "Incorrect right child entry"
+      raise InvalidUpdatePath,
+            "Incorrect right child entry #{right_child} for #{parent}"
     end
     unless @verified[left_child] == @left_child[parent]
       raise DuplicateChild, "Duplicate left child node"
@@ -173,14 +175,13 @@ class HashTreeCache
   # Updates the cache to reflect a change in a leaf node value.
   #
   # Args:
-  #   entry:: the number of the entry holding the leaf to be updated (0-based)
-  #   new_value:: the new hash value for the entry
   #   update_path:: array of numbers of cache entries holding all the nodes
   #                 needed to update the root hash; entries at even positions
   #                 (0, 2, 4 etc.) must contain the nodes on the path from the
   #                 updated leaf to the root; entries at odd positions must
   #                 contain the siblings of the entries pointed by the preceding
   #                 positions; can be obtained from HashTree#leaf_update_path
+  #   new_value:: the new hash value for the leaf node
   #
   # Raises:
   #   InvalidEntry:: entry or one of the elements of root_path does not point to
@@ -188,12 +189,13 @@ class HashTreeCache
   #   InvalidUpdatePath:: update_path does not meet the conditions specified
   #                       in the argument description 
   #   UnverifiedEntry:: a cache entry listed on update_path is not verified
-  def update_leaf_value(entry, new_value, update_path)
-    check_entry entry
-    root_path.each { |path_entry| check_entry path_entry }    
-    check_update_path entry, root_path
+  #
+  # Returns self.
+  def update_leaf_value(update_path, new_value)
+    update_path.each { |path_entry| check_entry path_entry }    
+    check_update_path update_path
     
-    @node_hashes[entry] = new_value
+    @node_hashes[update_path.first] = new_value
     visit_update_path update_path do |hot_entry, cold_entry, parent_entry|
       hot_node = @node_ids[hot_entry]
       cold_node = @node_ids[cold_entry]
@@ -206,6 +208,7 @@ class HashTreeCache
                                         @node_hashes[hot_entry]      
       end
     end
+    self
   end
     
   # Checks that an entry number points to a valid entry in the cache.
@@ -232,11 +235,8 @@ class HashTreeCache
   #
   # See update_leaf_value for a description of the path structure, verification
   # process, and exceptions that can be raised.
-  def check_update_path(entry, update_path)
-    if update_path.first != entry
-      raise InvalidUpdatePath, "Update path does not contain leaf node entry"
-    end
-    if update_path.first < @leaf_count
+  def check_update_path(update_path)
+    if @node_ids[update_path.first] < @leaf_count
       raise InvalidUpdatePath, "Update path does not start at a leaf"
     end
     if @node_ids[update_path.last] != 1
@@ -246,11 +246,11 @@ class HashTreeCache
     visit_update_path update_path do |hot_entry, cold_entry, parent_entry|
       if @node_ids[hot_entry] ^ @node_ids[cold_entry] != 1
         raise InvalidUpdatePath,
-              "Root path contains non-siblings #{hot_entry} and #{cold_entry}"
+              "Path contains non-siblings #{hot_entry} and #{cold_entry}"
       end
       unless @node_ids[hot_entry] / 2 == @node_ids[parent_entry]
         raise InvalidUpdatePath,
-              "Root path entry #{parent_entry} is not parent for #{hot_entry}"
+              "Path entry #{parent_entry} is not parent for #{hot_entry}"
       end
       
       # NOTE: the checks below will not run for the root node; that's OK, the
