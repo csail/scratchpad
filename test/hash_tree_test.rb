@@ -25,7 +25,7 @@ class HashTreeTest < Test::Unit::TestCase
   end
   
   def test_root_hash
-    assert_equal "fa81d8ea92da5b63ae58cba7cb972f3f3a2fabee",
+    assert_equal 'fa81d8ea92da5b63ae58cba7cb972f3f3a2fabee',
                  @tree[1].unpack('H*').first
   end
   
@@ -38,7 +38,7 @@ class HashTreeTest < Test::Unit::TestCase
   def test_update
     @tree.update 500, one_block_hash
     @tree.verify
-    assert_equal "67e03a78785a9dddb888a989840d839de92a5ea4",
+    assert_equal '1a9934f73d2ddf275d5e9080d8f7dab43f6add4e',
                  @tree[1].unpack('H*').first
   end
   

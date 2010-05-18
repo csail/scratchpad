@@ -207,6 +207,11 @@ class HashTreeCache
         HashTree.node_hash parent_node, @node_hashes[cold_entry],
                                         @node_hashes[hot_entry]      
       end
+      if hot_node < cold_node
+        verify_children parent_entry, hot_entry, cold_entry
+      else
+        verify_children parent_entry, cold_entry, hot_entry
+      end
     end
     self
   end

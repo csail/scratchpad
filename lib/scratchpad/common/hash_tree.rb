@@ -59,6 +59,8 @@ class HashTree
   def update(leaf_id, new_value)
     @nodes[@leaf_count + leaf_id] = new_value
     visit_path_to_root(leaf_id) do |node|
+      next if leaf_node?(node)
+      
       @nodes[node] = HashTree.node_hash node, @nodes[HashTree.left_child(node)],
                                         @nodes[HashTree.right_child(node)]
     end
