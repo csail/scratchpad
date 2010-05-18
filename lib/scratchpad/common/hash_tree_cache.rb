@@ -310,12 +310,7 @@ module Scratchpad::HashTreeCache::Exceptions
   class IncorrectNodeHash < SecurityError
     
   end
-  
-  # Raised when a 
-  class InvalidNodeId < IndexError
     
-  end
-  
   # Raised when the path to update_leaf_value is broken for some reason.
   class InvalidUpdatePath < SecurityError
     
@@ -328,8 +323,9 @@ module Scratchpad::HashTreeCache::Exceptions
   end
 end  # namespace Scratchpad::HashTreeCache::Exceptions
 
-# :nodoc: fold exceptions namespace into HashTreeCache
+# :nodoc: fold exceptions namespaces into HashTreeCache
 class Scratchpad::HashTreeCache
+  include Scratchpad::HashTree::Exceptions
   include Scratchpad::HashTreeCache::Exceptions
 end
 

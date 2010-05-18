@@ -3,6 +3,8 @@ require 'helper.rb'
 class HashTreeTest < Test::Unit::TestCase
   Crypto = Scratchpad::Crypto
   HashTree = Scratchpad::HashTree
+  include HashTree::Exceptions
+  
   
   def setup
     @tree = HashTree.new 1000, empty_block_hash
@@ -27,6 +29,13 @@ class HashTreeTest < Test::Unit::TestCase
   def test_root_hash
     assert_equal 'fa81d8ea92da5b63ae58cba7cb972f3f3a2fabee',
                  @tree[1].unpack('H*').first
+  end
+  
+  def test_invalid_accesses
+    assert_raise(InvalidNodeId, "0") { @tree[0] }
+    assert_raise(InvalidNodeId, "-1") { @tree[-1] }
+    assert_raise(InvalidNodeId, "2048") { @tree[2048] }
+    assert_raise(InvalidNodeId, "2049") { @tree[2049] }
   end
   
   def test_leaf_update_path

@@ -38,8 +38,8 @@ class HashTree
   #
   # Returns a string containing the hash for the desired node.
   def [](node_id)
-    if node_id < 0 || node_id >= @leaf_count * 2
-      raise "Invalid node id #{node_id.inspect}"
+    if node_id <= 0 || node_id >= @leaf_count * 2
+      raise InvalidNodeId, "Invalid node id #{node_id.inspect}"
     end
     @nodes[node_id]
   end
@@ -129,5 +129,19 @@ class HashTree
     node * 2 + 1
   end
 end  # class Scratchpad::HashTree
+
+
+# Namespace for the exceptions raised by HashTree.
+module Scratchpad::HashTree::Exceptions
+  # Raised when an argument contains an invalid hash tree node number.
+  class InvalidNodeId < IndexError
+    
+  end
+end
+
+# :nodoc: fold exceptions namespace into HashTree
+class Scratchpad::HashTree
+  include Scratchpad::HashTree::Exceptions
+end
 
 end  # namespace Scratchpad

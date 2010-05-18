@@ -4,7 +4,8 @@ class HashTreeCacheTest < Test::Unit::TestCase
   Crypto = Scratchpad::Crypto
   HashTree = Scratchpad::HashTree
   HashTreeCache = Scratchpad::HashTreeCache
-  include Scratchpad::HashTreeCache::Exceptions
+  include HashTree::Exceptions
+  include HashTreeCache::Exceptions
   
   def setup
     @tree = HashTree.new 1000, empty_block_hash
@@ -73,6 +74,10 @@ class HashTreeCacheTest < Test::Unit::TestCase
     end
   end
   
+  def test_load_entry_with_invalid_entry
+    assert_raise(InvalidEntry) { @cache.load_entry 64, 2, @tree[2], -1 }    
+  end
+  
   def test_load_entry_with_wrong_old_parent_entry
     @cache.verify_children 0, 1, 2
     assert_raise(InvalidUpdatePath) { @cache.load_entry 1, 4, @tree[3], 2 }
@@ -129,7 +134,7 @@ class HashTreeCacheTest < Test::Unit::TestCase
           @cache.verify_children parent_entry, entry - 1, entry
         else
           @cache.verify_children parent_entry, entry, entry - 1
-        end          
+        end
       end
     end
     (0...(update_nodes.length)).to_a.reverse
@@ -148,22 +153,36 @@ class HashTreeCacheTest < Test::Unit::TestCase
     update_path = setup_leaf_update 500
 
     assert_raise InvalidUpdatePath, 'Starting node is not a leaf' do
-      @cache.update_leaf_value update_path[1..-1], one_block_hash
+      @cache.update_leaf_value update_path[2..-1], one_block_hash
     end
     assert_raise InvalidUpdatePath, 'End node is not the root' do
       @cache.update_leaf_value update_path[0...-1], one_block_hash
     end
 
     update_path_dup = update_path.dup
-    update_path_dup[0, 2] = update_path_dup[0, 2].reverse
+    update_path_dup[2, 2] = update_path_dup[2, 2].reverse
     assert_raise InvalidUpdatePath, 'Parent / child mismatch' do
-      @cache.update_leaf_value update_path[0...-1], one_block_hash
+      @cache.update_leaf_value update_path_dup, one_block_hash
     end
 
     update_path_dup = update_path.dup
     update_path_dup[1] = update_path_dup[2]
     assert_raise InvalidUpdatePath, 'Neighbor mismatch' do
-      @cache.update_leaf_value update_path[0...-1], one_block_hash
-    end    
+      @cache.update_leaf_value update_path_dup, one_block_hash
+    end
+  end
+  
+  def test_update_leaf_with_unverified_nodes
+    update_path = setup_leaf_update 500
+    update_nodes = @tree.leaf_update_path 500
+    
+    update_path[0...-1].each_index do |i|
+      @cache.load_entry 63, update_nodes[i], @tree[update_nodes[i]], -1
+      old_value, update_path[i] = update_path[i], 63
+      assert_raise UnverifiedEntry, "Unverified path element #{i}" do
+        @cache.update_leaf_value update_path, one_block_hash
+      end
+      update_path[i] = old_value
+    end
   end
 end
