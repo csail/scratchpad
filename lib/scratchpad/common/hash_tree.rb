@@ -43,6 +43,11 @@ class HashTree
     end
     @nodes[node_id]
   end
+  
+  # The hash value for the tree's root node.
+  def root_hash
+    self[1]
+  end
 
   # Updates the value of a leaf.
   #
@@ -74,15 +79,13 @@ class HashTree
     end
   end
     
-  # The set of nodes needed to verify the value of a leaf.
-  def leaf_validation_path(leaf_id)
-    deps = Set.new
-    visit_path_to_root(leaf_id) do |node|
-      next if leaf_node?(node)
-      deps << HashTree.left_child(node)
-      deps << HashTree.right_child(node)
+  # The set of nodes needed to update or verify the value of a leaf.
+  def leaf_update_path(leaf_id)
+    deps = []
+    visit_path_to_root leaf_id do |node|
+      deps << node
+      deps << (node ^ 1) unless node == 1
     end
-    deps << 1  # Add the root node.
     deps
   end
   

@@ -29,10 +29,10 @@ class HashTreeTest < Test::Unit::TestCase
                  @tree[1].unpack('H*').first
   end
   
-  def test_leaf_validation_path
-    assert_equal Set.new([1, 2, 3, 4, 5, 10, 11, 22, 23, 46, 47, 94, 95,
-                          190, 191, 380, 381, 762, 763, 1524, 1525]),
-                 @tree.leaf_validation_path(500)
+  def test_leaf_update_path
+    golden_path = [1524, 1525, 762, 763, 381, 380, 190, 191, 95, 94, 47, 46,
+                   23, 22, 11, 10, 5, 4, 2, 3, 1]
+    assert_equal golden_path, @tree.leaf_update_path(500)
   end
 
   def test_update
