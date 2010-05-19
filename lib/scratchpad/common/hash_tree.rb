@@ -1,5 +1,3 @@
-require 'set'
-
 # :nodoc: namespace
 module Scratchpad
 
