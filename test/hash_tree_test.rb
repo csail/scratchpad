@@ -8,6 +8,9 @@ class HashTreeTest < Test::Unit::TestCase
   
   def setup
     @tree = HashTree.new 1000, empty_block_hash
+    @left_children = [[1, 2], [2, 4], [3, 6], [4, 8]]
+    @right_children = [[1, 3], [2, 5], [3, 7], [4, 9]]
+    @siblings = [[2, 3], [4, 5], [6, 7], [8, 9]]
   end
   
   def empty_block_hash
@@ -51,6 +54,13 @@ class HashTreeTest < Test::Unit::TestCase
                  @tree[1].unpack('H*').first
   end
   
+  def test_visit_path_to_root
+    golden_path = [1524, 762, 381, 190, 95, 47, 23, 11, 5, 2, 1]
+    path = []
+    @tree.visit_path_to_root(500) { |node| path << node }
+    assert_equal golden_path, path
+  end
+  
   def test_verify
     assert_nothing_raised("Initial tree should be fine") { @tree.verify }
     
@@ -58,6 +68,60 @@ class HashTreeTest < Test::Unit::TestCase
     @tree.instance_variable_get(:@nodes)[1524] = one_block_hash
     assert_raise RuntimeError, "Compromised tree should not verify" do
       @tree.verify
+    end
+  end
+  
+  def test_left_child
+    @left_children.each do |input, golden|
+      assert_equal golden, HashTree.left_child(input)
+    end
+  end
+
+  def test_right_child
+    @right_children.each do |input, golden|
+      assert_equal golden, HashTree.right_child(input)
+    end
+  end
+  
+  def test_parent
+    (@left_children + @right_children).each do |golden, input|
+      assert_equal golden, HashTree.parent(input), input.to_s
+    end
+  end
+  
+  def test_sibling
+    @siblings.each do |left, right|
+      assert_equal right, HashTree.sibling(left)
+      assert_equal left, HashTree.sibling(right)
+    end    
+  end
+  
+  def test_predicates
+    @left_children.each do |input, golden|
+      assert_equal true, HashTree.left_child?(golden),
+                   "left_child #{golden}"
+      assert_equal false, HashTree.right_child?(golden)
+                   "right_child #{golden}"
+      assert_equal false, HashTree.siblings?(input, golden),
+                   "siblings #{input} #{golden}"
+    end    
+    @right_children.each do |input, golden|
+      assert_equal false, HashTree.left_child?(golden),
+                   "left_child #{golden}"
+      assert_equal true, HashTree.right_child?(golden)
+                   "right_child #{golden}"
+      assert_equal false, HashTree.siblings?(input, golden),
+                   "siblings #{input} #{golden}"
+    end
+    @siblings.each do |left, right|
+      assert_equal true, HashTree.siblings?(left, right),
+                   "siblings #{left} #{right}"
+      assert_equal true, HashTree.siblings?(right, left),
+                   "siblings #{right} #{left}"
+      assert_equal false, HashTree.siblings?(left - 1, right),
+                   "siblings #{left - 1} #{right}"
+      assert_equal false, HashTree.siblings?(left, right + 1),
+                   "siblings #{left} #{right + 1}"
     end
   end
 end

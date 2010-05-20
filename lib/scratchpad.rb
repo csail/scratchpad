@@ -6,6 +6,7 @@ end
 require 'scratchpad/common/crypto.rb'
 require 'scratchpad/common/hash_tree.rb'
 require 'scratchpad/common/hash_tree_cache.rb'
+require 'scratchpad/common/hash_tree_cache_driver.rb'
 require 'scratchpad/models/client.rb'
 require 'scratchpad/models/disk.rb'
 require 'scratchpad/models/fpga.rb'

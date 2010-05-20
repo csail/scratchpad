@@ -74,7 +74,8 @@ class HashTree
   def verify
     1.upto(@leaf_count - 1) do |node|
       next if @nodes[node] ==
-          HashTree.node_hash(node, @nodes[node * 2], @nodes[node * 2 + 1])
+          HashTree.node_hash(node, @nodes[HashTree.left_child(node)],
+                                   @nodes[HashTree.right_child(node)])
       raise "Tree integrity verification failed"    
     end
   end
@@ -84,7 +85,7 @@ class HashTree
     deps = []
     visit_path_to_root leaf_id do |node|
       deps << node
-      deps << (node ^ 1) unless node == 1
+      deps << HashTree.sibling(node) unless node == 1
     end
     deps
   end
@@ -99,11 +100,10 @@ class HashTree
     node = @leaf_count + leaf_id
     while node > 0
       yield node
-      node /= 2
+      node = HashTree.parent(node)
     end
     self
   end
-  private :visit_path_to_root
   
   # True if a node number points to a leaf node.
   #
@@ -119,12 +119,41 @@ class HashTree
                         left_child_hash, right_child_hash].join
   end
   
+  # The node number of a node's left child.
   def self.left_child(node)
-    node * 2  
+    node << 1  # node * 2
   end
   
+  # The node number of a node's right child.
   def self.right_child(node)
-    node * 2 + 1
+    (node << 1) | 1  # node * 2 + 1
+  end
+
+  # The node number of a node's sibling.
+  #
+  # The sibling of a node is the parent's other child.
+  def self.sibling(node)
+    node ^ 1
+  end
+  
+  # The node number of a node's parent.
+  def self.parent(node)
+    node >> 1  # node / 2
+  end
+  
+  # True if two node numbers represent nodes with the same parent.
+  def self.siblings?(node, other_node)
+    node ^ other_node == 1
+  end
+  
+  # True if the node is the left child of its parent.
+  def self.left_child?(node)
+    (node & 1) == 0  # node % 2 == 0
+  end
+  
+  # True if the node is the right child of its parent.
+  def self.right_child?(node)
+    (node & 1) == 1  # node % 2 == 1
   end
 end  # class Scratchpad::HashTree
 

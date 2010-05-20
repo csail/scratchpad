@@ -107,10 +107,10 @@ class HashTreeCache
       end
       
       old_node_id = @node_ids[entry]
-      if @node_ids[old_parent_entry] != old_node_id / 2
+      if @node_ids[old_parent_entry] != HashTree.parent(old_node_id)
         raise InvalidUpdatePath, "old_parent_entry does not store parent node"
       end
-      if old_node_id % 2 == 0
+      if HashTree.left_child?(old_node_id)
         @left_child[old_parent_entry] = false
       else
         @right_child[old_parent_entry] = false
@@ -148,11 +148,11 @@ class HashTreeCache
     check_entry right_child
   
     raise UnverifiedEntry, "Parent entry not validated" unless @verified[parent]
-    unless @node_ids[left_child] == @node_ids[parent] * 2
+    unless @node_ids[left_child] == HashTree.left_child(@node_ids[parent])
       raise InvalidUpdatePath,
             "Incorrect left child entry #{left_child} for #{parent}"
     end
-    unless @node_ids[right_child] == @node_ids[parent] * 2 + 1
+    unless @node_ids[right_child] == HashTree.right_child(@node_ids[parent])
       raise InvalidUpdatePath,
             "Incorrect right child entry #{right_child} for #{parent}"
     end
@@ -200,14 +200,14 @@ class HashTreeCache
       hot_node = @node_ids[hot_entry]
       cold_node = @node_ids[cold_entry]
       parent_node = @node_ids[parent_entry]
-      @node_hashes[parent_entry] = if hot_node < cold_node
+      @node_hashes[parent_entry] = if HashTree.left_child?(hot_node)
         HashTree.node_hash parent_node, @node_hashes[hot_entry],
                                         @node_hashes[cold_entry]
       else
         HashTree.node_hash parent_node, @node_hashes[cold_entry],
                                         @node_hashes[hot_entry]      
       end
-      if hot_node < cold_node
+      if HashTree.left_child?(hot_node)
         verify_children parent_entry, hot_entry, cold_entry
       else
         verify_children parent_entry, cold_entry, hot_entry
@@ -249,11 +249,11 @@ class HashTreeCache
     end
     
     visit_update_path update_path do |hot_entry, cold_entry, parent_entry|
-      if @node_ids[hot_entry] ^ @node_ids[cold_entry] != 1
+      unless HashTree.siblings?(@node_ids[hot_entry], @node_ids[cold_entry])
         raise InvalidUpdatePath,
               "Path contains non-siblings #{hot_entry} and #{cold_entry}"
       end
-      unless @node_ids[hot_entry] / 2 == @node_ids[parent_entry]
+      unless HashTree.parent(@node_ids[hot_entry]) == @node_ids[parent_entry]
         raise InvalidUpdatePath,
               "Path entry #{parent_entry} is not parent for #{hot_entry}"
       end
