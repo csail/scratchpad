@@ -108,9 +108,17 @@ class HashTree
   # True if a node number points to a leaf node.
   #
   # Args:
-  #   leaf_id:: a node number  
+  #   node_id:: a node number  
   def leaf_node?(node_id)
     @leaf_count < node_id
+  end
+
+  # The node number for a leaf node.
+  #
+  # Args:
+  #   leaf_id:: the number of the leaf whose node number is desired (0-based) 
+  def leaf_node_id(leaf_id)
+    @leaf_count + leaf_id
   end
 
   # 
@@ -154,7 +162,7 @@ class HashTree
   # True if the node is the right child of its parent.
   def self.right_child?(node)
     (node & 1) == 1  # node % 2 == 1
-  end
+  end  
 end  # class Scratchpad::HashTree
 
 

@@ -16,7 +16,10 @@ class HashTreeCacheDriver
     @cache_lines = Array.new(cache_capacity) do
       { :node => 0, :left => nil, :right => nil }
     end
-    @tree_nodes = { 0 => 1 }
+    @cache_lines[0][:node] = 1
+    
+    # Node 0 points to line 0 so we get old_parent_lines for empty lines.
+    @tree_nodes = { 0 => 0, 1 => 0 }
   end
   
   # The operations that will get a leaf node loaded into the cache.
@@ -29,7 +32,8 @@ class HashTreeCacheDriver
   #   :ops:: an array following the specifications for perform_ops
   def load_leaf(leaf_id)
     nodes = missing_nodes_for_read(leaf_id)
-    ops, mapped = load_nodes nodes[:load], nodes[:keep], [leaf_id]
+    ops, mapped = load_nodes nodes[:load], nodes[:keep],
+                             [@tree.leaf_node_id(leaf_id)]
     { :line => mapped.first, :ops => ops }
   end
   
@@ -65,15 +69,16 @@ class HashTreeCacheDriver
     operations.each do |op|
       case op[:op]
       when :load
-        old_node = @cache_lines[op[:line]][:node]
-        @tree_nodes.delete old_node
-        if HashTree.left_child? old_node
-          @cache_lines[op[:old_parent_line]][:left] = nil
-        else
-          @cache_lines[op[:old_parent_line]][:right] = nil
+        if (old_node = @cache_lines[op[:line]][:node]) != 0        
+          @tree_nodes.delete old_node
+          if HashTree.left_child? old_node
+            @cache_lines[op[:old_parent_line]][:left] = nil
+          else
+            @cache_lines[op[:old_parent_line]][:right] = nil
+          end
         end
         
-        @cache_lines[op[:line]][:id] = op[:node]
+        @cache_lines[op[:line]][:node] = op[:node]
         @cache_lines[op[:line]][:left] = nil
         @cache_lines[op[:line]][:right] = nil
         @tree_nodes[op[:node]] = op[:line]
@@ -118,16 +123,14 @@ class HashTreeCacheDriver
   #   :path:: the original update path
   def missing_nodes_for_write(leaf_id)
     path = @tree.leaf_update_path(leaf_id)
-    keep, load = path.partition do |node|
-      @tree_nodes.hash_key?(node)
-    end
+    keep, load = path.reverse.partition { |node| @tree_nodes.has_key?(node) }
     { :keep => keep, :load => load, :path => path }
   end
   
   # The operations that will load a bunch of nodes in the cache.
   #
   # Args:
-  #   load_nodes:: the nodes to be loaded in the cache
+  #   load_nodes:: the nodes to be loaded in the cache, in increasing order
   #   keep_nodes:: the nodes to be mapped in the cache
   #   map_nodes:: array of nodes to be mapped to cache lines
   #
@@ -135,15 +138,16 @@ class HashTreeCacheDriver
   #   operations:: conforms to the specifications of perform_ops
   #   mapped_lines:: cache lines that will be holding the nodes in map_nodes
   def load_nodes(load_nodes, keep_nodes, map_nodes)
-    free_lines = find_lines nodes[:load].count, nodes[:keep]
-    lines = nodes[:load].zip(free_lines)    
+    free_lines = find_lines load_nodes.count, keep_nodes
+    lines = load_nodes.zip free_lines
     ops = lines.map do |node, line|
-      old_parent_line = @tree_nodes[HashTree.parent(@cache_lines[line][:id])]
+      old_parent_line = @tree_nodes[HashTree.parent(@cache_lines[line][:node])]
+      
       { :op => :load, :line => line, :node => node,
         :old_parent_line => old_parent_line }
     end
     
-    new_lines = Hash[*nodes[:load].zip(lines).flatten]
+    new_lines = Hash[*lines.flatten]
     verified_parents = Set.new([])
     lines.each do |node, line|
       parent_node = HashTree.parent(node)
@@ -163,7 +167,7 @@ class HashTreeCacheDriver
       end
     end
     
-    return ops, map_nodes.map { |node| new_lines[node] }
+    return ops, map_nodes.map { |node| new_lines[node] || @tree_nodes[node] }
   end
   
   # Locates lines that should be used to load new nodes.
@@ -174,7 +178,13 @@ class HashTreeCacheDriver
   #
   # Returns an array of lines.
   def find_lines(load_count, keep_lines)
-    
+    lines = []
+    @cache_lines.each_with_index { |line, i| lines << i if line[:node] == 0 }
+    lines = lines[0, load_count]
+    load_count -= lines.length
+
+    raise "TODO(costan): implement cache replacement policy" if load_count > 0
+    lines
   end  
 end  # class Scratchpad::HashTreeCacheDriver
 
