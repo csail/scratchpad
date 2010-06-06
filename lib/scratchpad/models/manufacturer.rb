@@ -79,17 +79,41 @@ class Manufacturer
   
   # Manufactures a new FPGA and smart-card, which are paired.
   #
+  # Args:
+  #   root_hash:: the initial storage root hash for the disk which the system
+  #               will be used with
+  #
   # Returns: a Hash with the following keys:
   #   :fpga:: the new FPGA
-  #   :card:: the new smart-card
-  def device_pair
-    endorsement_key = Crypto.key_pair
-    endorsement_cert = Crypto.cert device_distinguished_name, 3 * 365,
-                                   @ca_keys, @ca_cert, endorsement_key[:public]
-        
-    fpga = Fpga.new :ecert => endorsement_cert, :ekey => endorsement_key
+  #   :card:: the new smart-card  
+  def device_pair(root_hash, leaf_count)
     card = Smartcard.new
+    fpga = Fpga.new :ca_cert => @ca_cert
+    
+    public_ek = card.public_ek    
+    endorsement_cert = Crypto.cert device_distinguished_name, 3 * 365,
+                                   @ca_keys, @ca_cert, public_ek
+                                   
+    encrypted_fpga_key = fpga.encrypted_key endorsement_cert
+    smartcard.bind_to_fpga encrypted_fpga_key, root_hash, leaf_count
+
+    fpga = Fpga.new :ecert => endorsement_cert, :ekey => endorsement_key
     { :card => card, :fpga => fpga }
+  end
+  
+  # Boots up a paired FPGA and smart-card.
+  #
+  # Args:
+  #   fpga:: the paired-up FPGA
+  #   smartcard:: the paird-up smart-card
+  #   disk:: the disk in the paired-up system
+  #
+  # The return value is unspecified.
+  def self.boot_pair(fpga, smartcard, disk)
+    nonce = fpga.nonce
+    response = smartcard.fpga_challenge nonce
+    fpga.boot disk.puf_syndrome, response[:root_key], disk.leaf_count,
+              response[:private_key]
   end
   
   # The DN in a trusted device certificate. 
