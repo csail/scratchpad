@@ -2,6 +2,17 @@
 require 'rubygems'
 require 'scratchpad'
 
+if ARGV.length < 2
+  print <<END_USAGE
+Usage: #{$0} net_interface ether_type
+  net_interface: name of the Ethernet interface, e.g. eth0
+END_USAGE
+  exit 1
+end
+ 
+interface = ARGV[0]
+ether_type = [ARGV[1]].pack('H*').unpack('n').first
+
 EventMachine.run do
-  ping_server = Scratchpad::Ethernet::PingServer.new nil
+  ping_server = Scratchpad::Ethernet::PingServer.new interface, ether_type
 end

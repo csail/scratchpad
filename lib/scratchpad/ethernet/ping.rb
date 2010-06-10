@@ -27,15 +27,15 @@ class PingServer
     end
   end
 
-  def initialize(ether_type)
-    @socket = Ethernet.socket nil, ether_type
+  def initialize(if_name, ether_type)
+    @socket = Ethernet.socket if_name, ether_type
     EventMachine.attach @socket, Connection
   end
 end  # module Scratchpad::Ethernet::PingServer
   
 # Ping utility 
 class PingClient
-  def initialize(if_name, source_mac, destination_mac, ether_type)
+  def initialize(if_name, ether_type, source_mac, destination_mac)
     @socket = Ethernet.socket if_name, ether_type
     
     @source_mac = [source_mac].pack('H*')[0, 6]
@@ -47,16 +47,17 @@ class PingClient
   #
   # Returns true if the ping receives a response, false otherwise.
   def ping(data = nil)
-    @data = (data || '').clone
+    data = (data || '').clone
     # Pad data to have at least 64 bytes.
-    @data += "\0" * (64 - @data.length) if @data.length < 64
+    data += "\0" * (64 - data.length) if data.length < 64
   
-    @ping_packet = @source_mac + @dest_mac + @ether_type + @data
-    @response_packet = @dest_mac + @source_mac + @ether_type + @data
+    ping_packet = @dest_mac + @source_mac + @ether_type + data
+    @socket.send ping_packet, 0
+
+    response_packet = @dest_mac + @source_mac + @ether_type + data
+    response = @socket.recv response_packet.length * 2
     
-    @socket.send @ping_packet, 0
-    @response = @socket.recv @response_packet.length * 2
-    @response == @response_packet
+    response == response_packet
   end
 end  # module Scratchpad::Ethernet::PingClient
 
