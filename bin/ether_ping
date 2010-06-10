@@ -1,0 +1,31 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+
+if ARGV.length < 5
+  print <<END_USAGE
+Usage: #{$0} net_interface source_mac dest_mac ether_type data
+  net_interface: name of the Ethernet interface, e.g. eth0
+  source_mac: source MAC for the ping packets, in hex (6 bytes)
+  dest_mac: destination MAC for the ping packets, in hex (6 bytes)
+  ether_type: packet type for the Ethernet II frame, in hex (2 bytes)
+  data: ping packet data, in hex (0-padded to 64 bytes)
+END_USAGE
+  exit 1
+end
+ 
+interface = ARGV[0]
+source_mac, dest_mac = ARGV[1], ARGV[2]
+ether_type = [ARGV[3]].pack('H*').unpack('n').first
+data = [ARGV[4]].pack('H*')
+
+client = Scratchpad::Ethernet::PingClient.new interface, source_mac, dest_mac,
+                                              ether_type
+
+4.times do
+  print "Pinging #{dest_mac}... "
+  STDOUT.flush
+  puts client.ping(data) ? "OK" : "Failed"
+  STDOUT.flush
+  sleep 1
+end

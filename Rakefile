@@ -5,13 +5,18 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "scratchpad"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{High-performance trusted cloud storage proof-of-concept}
+    gem.description = <<END
+Proof-of-concept models for a system that trusts an FPGA and a smart-card chip
+for integrity verification of an untrusted storage medium.
+END
     gem.email = "victor@costan.us"
     gem.homepage = "http://github.com/costan/scratchpad"
     gem.authors = ["costan"]
     gem.add_development_dependency "fakefs", ">=0.2.1"
     gem.add_development_dependency "jeweler",  ">=1.4.0"
+    gem.add_runtime_dependency "ffi", ">=0.6.3"
+    gem.add_runtime_dependency "eventmachine", ">=0.12.10"
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

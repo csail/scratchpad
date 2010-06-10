@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+
+EventMachine.run do
+  ping_server = Scratchpad::Ethernet::PingServer.new nil
+end

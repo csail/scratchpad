@@ -1,0 +1,29 @@
+#!/usr/bin/env ruby
+
+def enable_pcap_on_windows()
+  success = Kernel.system 'sc config npf start= auto'
+  success ? 'Must be Administrator' : nil
+end
+
+def enable_pcap_on_linux()
+  success = Kernel.system(
+      "setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' /usr/bin/dumpcap")
+  success ? 'Must be root or run via sudo' : nil
+end
+
+def enable_pcap_on_osx()
+  success = Kernel.system("chmod o+r /dev/bpf*")
+  success ? 'Must be root or run via sudo' : nil
+end
+
+
+case RUBY_PLATFORM
+when /darwin/
+  enable_pcap_on_osx
+when /linux/
+  enable_pcap_on_linux
+when /win/
+  enable_pcap_on_windows
+else
+  puts 'Unsupported platform'
+end
