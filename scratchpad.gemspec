@@ -62,6 +62,7 @@ for integrity verification of an untrusted storage medium.
   s.test_files = [
     "test/disk_test.rb",
      "test/hash_tree_cache_test.rb",
+     "test/raw_ethernet_test.rb",
      "test/manufacturer_test.rb",
      "test/integration_test.rb",
      "test/helper.rb",

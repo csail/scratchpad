@@ -35,10 +35,10 @@ end  # module Scratchpad::Ethernet::PingServer
   
 # Ping utility 
 class PingClient
-  def initialize(if_name, ether_type, source_mac, destination_mac)
+  def initialize(if_name, ether_type, destination_mac)
     @socket = Ethernet.socket if_name, ether_type
     
-    @source_mac = [source_mac].pack('H*')[0, 6]
+    @source_mac = [Ethernet.get_interface_mac(if_name)].pack('H*')[0, 6]
     @dest_mac = [destination_mac].pack('H*')[0, 6]
     @ether_type = [ether_type].pack('n')    
   end

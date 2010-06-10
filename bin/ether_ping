@@ -2,12 +2,11 @@
 require 'rubygems'
 require 'scratchpad'
 
-if ARGV.length < 5
+if ARGV.length < 4
   print <<END_USAGE
-Usage: #{$0} net_interface ether_type source_mac dest_mac data
+Usage: #{$0} net_interface ether_type dest_mac data
   net_interface: name of the Ethernet interface, e.g. eth0
   ether_type: packet type for the Ethernet II frame, in hex (2 bytes)
-  source_mac: source MAC for the ping packets, in hex (6 bytes)
   dest_mac: destination MAC for the ping packets, in hex (6 bytes)
   data: ping packet data, in hex (0-padded to 64 bytes)
 END_USAGE
@@ -16,11 +15,10 @@ end
  
 interface = ARGV[0]
 ether_type = [ARGV[1]].pack('H*').unpack('n').first
-source_mac, dest_mac = ARGV[2], ARGV[3]
-data = [ARGV[4]].pack('H*')
+dest_mac = ARGV[2]
+data = [ARGV[3]].pack('H*')
 
-client = Scratchpad::Ethernet::PingClient.new interface, ether_type,
-                                              source_mac, dest_mac
+client = Scratchpad::Ethernet::PingClient.new interface, ether_type, dest_mac
 
 4.times do
   print "Pinging #{dest_mac}... "
