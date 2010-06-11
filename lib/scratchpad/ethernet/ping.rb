@@ -75,7 +75,7 @@ class PingClient
     ping_packet = @dest_mac + @source_mac + @ether_type + data
     @socket.send ping_packet, 0
 
-    response_packet = @dest_mac + @source_mac + @ether_type + data
+    response_packet = @source_mac + @dest_mac + @ether_type + data
     response = @socket.recv response_packet.length * 2
     
     response == response_packet
