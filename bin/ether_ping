@@ -20,7 +20,7 @@ data = [ARGV[3]].pack('H*')
 
 client = Scratchpad::Ethernet::PingClient.new interface, ether_type, dest_mac
 
-4.times do
+loop do
   print "Pinging #{dest_mac}... "
   STDOUT.flush
   puts client.ping(data) ? "OK" : "Failed"

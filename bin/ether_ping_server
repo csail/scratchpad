@@ -13,6 +13,5 @@ end
 interface = ARGV[0]
 ether_type = [ARGV[1]].pack('H*').unpack('n').first
 
-EventMachine.run do
-  ping_server = Scratchpad::Ethernet::PingServer.new interface, ether_type
-end
+ping_server = Scratchpad::Ethernet::PingServer.new interface, ether_type
+ping_server.run

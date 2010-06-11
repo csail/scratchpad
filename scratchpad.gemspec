@@ -52,7 +52,8 @@ for integrity verification of an untrusted storage medium.
      "test/hash_tree_test.rb",
      "test/helper.rb",
      "test/integration_test.rb",
-     "test/manufacturer_test.rb"
+     "test/manufacturer_test.rb",
+     "test/raw_ethernet_test.rb"
   ]
   s.homepage = %q{http://github.com/costan/scratchpad}
   s.rdoc_options = ["--charset=UTF-8"]

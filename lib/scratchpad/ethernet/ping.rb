@@ -8,9 +8,6 @@ module Scratchpad
 module Ethernet
 
 # Responder for ping utility using raw Ethernet sockets.
-#
-# The responder hooks into the EventMachine event loop. It must be run using
-# EventMachine#run.
 class PingServer
   module Connection
     def receive_data(packet)
@@ -27,9 +24,33 @@ class PingServer
     end
   end
 
+  # Hooks the responder into EventMachine.
+  def hook_em
+    EventMachine.attach @socket, Connection    
+  end
+  
+  class ConnectionWrapper
+    include Connection
+    
+    def initialize(socket)
+      @socket = socket
+    end
+    
+    def send_data(data)
+      @socket.send data, 0
+    end
+  end
+  
+  def run
+    connection = ConnectionWrapper.new @socket
+    loop do
+      packet = @socket.recv 65536
+      connection.receive_data packet
+    end
+  end
+  
   def initialize(if_name, ether_type)
     @socket = Ethernet.socket if_name, ether_type
-    EventMachine.attach @socket, Connection
   end
 end  # module Scratchpad::Ethernet::PingServer
   
@@ -46,8 +67,8 @@ class PingClient
   # Pings over raw Ethernet sockets.
   #
   # Returns true if the ping receives a response, false otherwise.
-  def ping(data = nil)
-    data = (data || '').clone
+  def ping(data, timeout = 1)
+    data = data.clone
     # Pad data to have at least 64 bytes.
     data += "\0" * (64 - data.length) if data.length < 64
   

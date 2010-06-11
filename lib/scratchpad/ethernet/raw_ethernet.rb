@@ -9,8 +9,8 @@ module Ethernet
   # A raw socket will receive all Ethernet frames, and send raw frames.
   def self.socket(if_name = nil, ether_type = nil)
     ether_type ||= all_ethernet_protocols
-    socket  = Socket.new raw_address_family, Socket::SOCK_RAW,
-                         [ether_type].pack('n').unpack('S').first
+    socket = Socket.new raw_address_family, Socket::SOCK_RAW, htons(ether_type)
+    socket.setsockopt Socket::SOL_SOCKET, Socket::SO_BROADCAST, true
     set_socket_interface(socket, if_name, ether_type) if if_name
     socket
   end
@@ -20,17 +20,16 @@ module Ethernet
     case RUBY_PLATFORM
     when /linux/
       if_number = get_interface_number if_name
-      p if_number
       # struct sockaddr_ll in /usr/include/linux/if_packet.h
-      socket_address = [raw_address_family, ether_type, if_number,
-                        0, 0, 0, ''].pack 'SSISCCa8'
+      socket_address = [raw_address_family, htons(ether_type), if_number,
+                        0xFFFF, 0, 0, ""].pack 'SSISCCa8'
       socket.bind socket_address
     else
       raise "Unsupported platform #{RUBY_PLATFORM}"
     end
     socket
   end
-  
+    
   # The interface number for an Ethernet interface.
   def self.get_interface_number(if_name)
     case RUBY_PLATFORM
@@ -79,6 +78,13 @@ module Ethernet
     else
       raise "Unsupported platform #{RUBY_PLATFORM}"
     end
+  end
+
+  # Converts a 16-bit integer from host-order to network-order.
+  #
+  # This is used internally by the rest of the code.
+  def self.htons(short_integer)
+    [short_integer].pack('n').unpack('S').first
   end
 end  # namespace Scratchpad::Ethernet
 
