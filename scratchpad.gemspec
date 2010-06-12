@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["costan"]
-  s.date = %q{2010-06-10}
+  s.date = %q{2010-06-12}
   s.description = %q{Proof-of-concept models for a system that trusts an FPGA and a smart-card chip
 for integrity verification of an untrusted storage medium.
 }
   s.email = %q{victor@costan.us}
-  s.executables = ["ether_ping_server", "enable_pcap", "ether_ping"]
+  s.executables = ["ether_ping_server", "enable_pcap", "fpga_setup", "ether_ping"]
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
@@ -39,6 +39,7 @@ for integrity verification of an untrusted storage medium.
      "lib/scratchpad/dev_keys/manufacturer.yml",
      "lib/scratchpad/ethernet/ping.rb",
      "lib/scratchpad/ethernet/raw_ethernet.rb",
+     "lib/scratchpad/fpga/provision.rb",
      "lib/scratchpad/models/client.rb",
      "lib/scratchpad/models/disk.rb",
      "lib/scratchpad/models/fpga.rb",
@@ -47,6 +48,7 @@ for integrity verification of an untrusted storage medium.
      "lib/scratchpad/models/smartcard.rb",
      "scratchpad.gemspec",
      "test/disk_test.rb",
+     "test/fpga_provisioning_test.rb",
      "test/hash_tree_cache_driver_test.rb",
      "test/hash_tree_cache_test.rb",
      "test/hash_tree_test.rb",
@@ -67,6 +69,7 @@ for integrity verification of an untrusted storage medium.
      "test/raw_ethernet_test.rb",
      "test/integration_test.rb",
      "test/hash_tree_cache_test.rb",
+     "test/fpga_provisioning_test.rb",
      "test/disk_test.rb",
      "test/helper.rb"
   ]

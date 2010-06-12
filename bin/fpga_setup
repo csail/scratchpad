@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+
+Scratchpad::Fpga::Provision.install_cable_driver
