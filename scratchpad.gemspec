@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 for integrity verification of an untrusted storage medium.
 }
   s.email = %q{victor@costan.us}
-  s.executables = ["enable_pcap", "ether_ping", "ether_ping_server"]
+  s.executables = ["ether_ping_server", "enable_pcap", "ether_ping"]
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
@@ -61,14 +61,14 @@ for integrity verification of an untrusted storage medium.
   s.rubygems_version = %q{1.3.7}
   s.summary = %q{High-performance trusted cloud storage proof-of-concept}
   s.test_files = [
-    "test/disk_test.rb",
-     "test/hash_tree_cache_test.rb",
-     "test/raw_ethernet_test.rb",
+    "test/hash_tree_cache_driver_test.rb",
      "test/manufacturer_test.rb",
-     "test/integration_test.rb",
-     "test/helper.rb",
      "test/hash_tree_test.rb",
-     "test/hash_tree_cache_driver_test.rb"
+     "test/raw_ethernet_test.rb",
+     "test/integration_test.rb",
+     "test/hash_tree_cache_test.rb",
+     "test/disk_test.rb",
+     "test/helper.rb"
   ]
 
   if s.respond_to? :specification_version then
