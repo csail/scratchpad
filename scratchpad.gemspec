@@ -29,6 +29,7 @@ for integrity verification of an untrusted storage medium.
      "bin/enable_pcap",
      "bin/ether_ping",
      "bin/ether_ping_server",
+     "bin/fpga_setup",
      "lib/scratchpad.rb",
      "lib/scratchpad/common/crypto.rb",
      "lib/scratchpad/common/hash_tree.rb",
