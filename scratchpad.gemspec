@@ -9,12 +9,12 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["costan"]
-  s.date = %q{2010-06-12}
+  s.date = %q{2010-06-13}
   s.description = %q{Proof-of-concept models for a system that trusts an FPGA and a smart-card chip
 for integrity verification of an untrusted storage medium.
 }
   s.email = %q{victor@costan.us}
-  s.executables = ["ether_ping_server", "enable_pcap", "fpga_setup", "ether_ping"]
+  s.executables = ["ether_ping_server", "enable_pcap", "fpga_deploy", "fpga_setup", "ether_ping"]
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"

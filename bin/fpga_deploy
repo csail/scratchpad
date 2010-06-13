@@ -1,0 +1,19 @@
+#/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+
+if ARGV.length < 1
+  print <<END_USAGE
+Usage: #{$0} bitfile [device]
+  bitfile: the file to burn to the FPGA
+  device: the /dev file for the Xilinx USB cable (e.g., eth0) 
+END_USAGE
+  exit 1
+end
+
+if Scratchpad::Fpga::Provision.deploy_bitfile(ARGV[0], :usb_dev => ARGV[1])
+  puts "OK\n"
+else
+  puts "Failed\n"
+  exit 1
+end

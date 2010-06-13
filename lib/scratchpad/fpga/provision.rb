@@ -8,8 +8,53 @@ module Fpga
   
 # Methods for provisioning the FPGA.
 module Provision
-  # Sets up this computer for using the Xilinx USB cable driver.
+  # Deploys a bitfile into an FPGA that is connected via an USB cable.
   #
+  # Args:
+  #   bitfile:: the path to the bitfile to load
+  #   options:: hash supporting the following keys
+  #       :usb_dev:: the /dev file for the USB port of the FPGA cable
+  #
+  # Returns true for success, or false if something went wrong.
+  def self.deploy_bitfile(bitfile, options = {})
+    tmp_file_root = "_bitfile_#{Time.now.to_i}_#{Process.pid}"
+    batch_file = tmp_file_root + '.batch'
+    out_file = tmp_file_root + '.out'
+    File.open(batch_file, 'w') do |f|
+      f.write bitfile_loading_batchfile(bitfile, options)
+    end
+    
+    cmd = "env LD_PRELOAD=#{usb_cable_driver_path} "
+    cmd += File.join xilinx_bin_path, 'impact'
+    cmd += " -batch #{batch_file} > #{out_file} 2>#{out_file}"
+    success = Kernel.system(cmd) ? true : false
+    
+    File.unlink batch_file
+    File.unlink out_file
+    log_file = '_impactbatch.log'
+    File.unlink log_file if File.exist? log_file
+    success
+  end
+
+  # The contents of a Xilinx impact batch file for programming a FPGA.
+  #
+  # The arguments are the same as for load_bitfile.  
+  def self.bitfile_loading_batchfile(bitfile, options = {})
+    port = options[:usb_dev] || 'auto'
+    speed = 'auto'
+    
+    <<END_BATCHFILE
+setMode -bscan
+setCable -port #{port} -baud #{speed}
+identify
+assignFile -position 5 -file #{bitfile}
+program -position 5
+quit
+END_BATCHFILE
+  end
+  
+  # Sets up this computer for using the Xilinx USB cable driver.
+  
   # This is more complicated than it seems.
   def self.setup_xilinx_cable
     install_packages
