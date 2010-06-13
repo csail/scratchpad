@@ -215,7 +215,16 @@ class HashTreeCache
     end
     self
   end
-    
+  
+  # The node number for a leaf node.
+  #
+  # Args:
+  #   leaf_id:: the number of the leaf whose node number is desired (0-based) 
+  def leaf_node_id(leaf_id)
+    # TODO(costan): de-duplicate code taken from from hash_tree.rb
+    @leaf_count + leaf_id
+  end
+  
   # Checks that an entry number points to a valid entry in the cache.
   #
   # Args:

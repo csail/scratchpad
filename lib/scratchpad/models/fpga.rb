@@ -35,6 +35,11 @@ class Fpga
       :puf => @puf, :fuses => @efuses,      
     }
   end
+  
+  # The size of the FPGA's node cache.
+  def capacity
+    @cache_capacity
+  end
     
   # Generates the FPGA nonce, used to boot the smart-card.
   #
@@ -90,8 +95,8 @@ class Fpga
     end
     @endorsement_key =
         Crypto.key_pair Crypto.sk_decrypt(@fpga_key, endorsement_key)
-    @hash_tree_cache = Scratchpad::HashTreeCache.new @cache_capacity, root_hash,
-                                                     leaf_count
+    @cache = Scratchpad::HashTreeCache.new @cache_capacity, root_hash,
+                                           leaf_count
     @booted = true
     @nonce = nil
     
@@ -177,6 +182,32 @@ class Fpga
     Crypto.hmac session_key, nonce
   end
   
+  # The main communication method with the storage server.
+  #
+  # The ops argument is a buffer of operations. Each operation is executed
+  # sequentially (for now). The operation type is indicated by the value for the
+  # :op key.
+  def perform_ops(ops)
+    response = []
+    ops.each do |op|
+      case op[:op]
+      when :load
+        @cache.load_entry op[:line], op[:node], op[:node_hash],
+                          op[:old_parent_line]        
+      when :verify
+        @cache.verify_children op[:parent], op[:left], op[:right]
+      when :sign
+        response << hmac(op[:block], op[:session_id], op[:nonce], op[:line],
+                         op[:data])
+      when :update
+        response << update(op[:block], op[:session_id], op[:nonce], op[:path],
+                           op[:data])
+      else
+        raise "Invalid operation type #{op[:op]}"
+      end
+    end
+  end
+  
   # Certifies a block's contents.
   #
   # Args:
@@ -186,10 +217,12 @@ class Fpga
   #   data:: the block's contents
   #
   # Returns: HMAC(Digest(data) || block_number || nonce)
-  def hmac(block_number, session_id, nonce, data)
-    # TODO(costan): the actual check
+  def hmac(block_number, session_id, nonce, cache_entry, data)
+    @cache.check_hash cache_entry, @cache.leaf_node_id(block_number),
+                      Crypto.crypto_hash(data)
     hmac_without_check! block_number, session_id, nonce, data    
   end
+  private :hmac
   
   # Certifies an update to a block's contents.
   #
@@ -200,10 +233,14 @@ class Fpga
   #   data:: the block's new contents
   #
   # Returns: HMAC(Digest(data) || block_number || nonce)
-  def update(block_number, session_id, nonce, data)
-    # TODO(costan): the actual check
+  def update(block_number, session_id, nonce, update_path, data)
+    data_hash = Crypto.crypto_hash(data)
+    @cache.update_leaf_value update_path, data_hash
+    @cache.check_hash update_path.first, @cache.leaf_node_id(block_number),
+                      data_hash
     hmac_without_check! block_number, session_id, nonce, data        
   end
+  private :update
   
   # Certifies a block's contents without performing any verification.
   #
@@ -217,7 +254,8 @@ class Fpga
   def hmac_without_check!(block_number, session_id, nonce, data)
     session_key = @session_keys[session_id]
     Crypto.hmac_for_block block_number, data, nonce, session_key
-  end  
+  end
+  private :hmac_without_check!
 end  # class Scratchpad::Models::Fpga
 
 end  # namespace Scratchpad::Models

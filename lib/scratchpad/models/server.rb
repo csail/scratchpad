@@ -14,9 +14,11 @@ class Server
   #   disk:: an untrusted disk providing the server's storage
   def initialize(fpga, disk, options = {})    
     @fpga = fpga
-    @disk = disk
+    @disk = disk    
     @ecert = disk.manufacturing_state[:endorsement_cert]
     @data_start = disk.header_blocks
+    @tree = disk.read_hash_tree
+    @tree_driver = HashTreeCacheDriver.new @tree, fpga.capacity
   end
   
   # Endorsement Certificate for the FPGA on the server.
@@ -39,7 +41,7 @@ class Server
     sid = 0  # TODO(costan): FPGA session allocation
     nonce_hmac = @fpga.establish_session sid, nonce, encrypted_session_key
     server_session = Session.new @fpga, @disk, sid, @data_start,
-                                 encrypted_session_key
+                                 @tree, @tree_driver
     { :nonce_hmac => nonce_hmac, :session => server_session }
   end
 end  # class Scratchpad::Server
@@ -49,11 +51,13 @@ class Server
 
 # A session between a trusted-storage server and a client.
 class Session  
-  def initialize(fpga, disk, sid, data_start, options = {})
+  def initialize(fpga, disk, sid, data_start, tree, tree_driver, options = {})
     @fpga = fpga
     @disk = disk
     @data_start = data_start
     @sid = sid
+    @tree = tree
+    @tree_driver = tree_driver
   end
 
   # The number of blocks available on the disk.
@@ -79,11 +83,16 @@ class Session
   #
   # Raises an exception if something goes wrong. 
   def read_blocks(start_block, block_count, nonce)
-    # TODO(costan): Merkle tree stuff
-    
     data = @disk.read_blocks start_block + @data_start, block_count
     hmacs = (0...block_count).map do |i|
-      @fpga.hmac start_block + i, @sid, nonce, data[i * block_size, block_size]
+      load_data = @tree_driver.load_leaf start_block + i
+      load_data[:ops] <<
+          { :op => :sign, :line => load_data[:line], :session_id => @sid,
+            :nonce => nonce, :data => data[i * block_size, block_size],
+            :block => start_block + i }
+      add_tree_data_to_ops load_data[:ops]
+      response = @fpga.perform_ops load_data[:ops]
+      response.first
     end
     { :data => data, :hmacs => hmacs }
   end
@@ -102,15 +111,32 @@ class Session
   #
   # Raises an exception if something goes wrong.
   def write_blocks(nonce, start_block, block_count, data)
-    # TODO(costan): Merkle tree stuff
+    # TODO: transactional integrity
     
     hmacs = (0...block_count).map do |i|
-      @fpga.update start_block + i, @sid, nonce,
-                   data[i * block_size, block_size]      
+      load_data = @tree_driver.load_update_path start_block + i
+      load_data[:ops] <<
+          { :op => :update, :path => load_data[:path], :nonce => nonce,
+            :data => data[i * block_size, block_size],
+            :block => start_block + i, :session_id => @sid }
+      add_tree_data_to_ops load_data[:ops]
+      response = @fpga.perform_ops load_data[:ops]
+      response.first
     end
     @disk.write_blocks start_block + @data_start, block_count, data
     { :hmacs => hmacs }
   end
+  
+  # Fills in the node hash in cache operations.
+  #
+  # Takes in a buffer of operations, and returns the same buffer.
+  def add_tree_data_to_ops(ops)
+    ops.each do |op|
+      op[:node_hash] = @tree[op[:node]] if op[:op] == :load
+    end
+    ops
+  end
+  private :add_tree_data_to_ops
 end  # class Scratchpad::Models::Server::Session
 
 end  # namespace Scratchpad::Models::Server
