@@ -108,8 +108,58 @@ class Fpga
   #   leaf_count:: the number of leaves in the storage tree
   def self.root_hash_hmac(fpga_key, fpga_nonce, root_hash, leaf_count)
     Crypto.hmac fpga_key, [fpga_nonce, [leaf_count].pack('N'), root_hash].join
+  end  
+
+  # The FPGA's symmetric key, encrypted under a smart card's endorsement key.
+  #
+  # Args:
+  #   endorsement_cert:: the smartcard's endorsement certificate, issued by the
+  #                      manufacturer
+  #
+  # Returns the FPGA's symmetric key, encrypted under the public key in the
+  # endorsement certificate.
+  #
+  # Raises:
+  #   RuntimeError:: the FPGA is already paired with a smart-card
+  #   RuntimeError:: the endorsement certificate doesn't match the
+  #                  manufacturer's CA key
+  def encrypted_key(endorsement_cert)
+    raise "Already paired" if @efuses
+    
+    unless Crypto.verify_cert endorsement_cert, [@ca_cert]
+      raise "Invalid endorsement certificate"
+    end
+    
+    generate_key
+    Crypto.pki_encrypt endorsement_cert.public_key, @fpga_key
   end
+
+  # Generates the FPGA's symmetric key.
+  #
+  # This happens when the FPGA is powered up for the first time, in the
+  # manufacturer's facility, before being paired up with a smart-card.
+  def generate_key
+    @fpga_key = Crypto.sk_key
+    @puf = @fpga_key[0...-1]
+    @syndrome = Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
+    @efuses = Crypto.crypto_hash @syndrome
+  end
+  private :generate_key
   
+  # Recovers the FPGA's symmetric key from the syndrome and PUF.
+  def recover_key
+    0.upto(255).each do |ch|
+      @fpga_key = [@puf, [ch].pack('C')].join
+      if @syndrome == Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
+        break 
+      end
+    end
+  end
+  private :recover_key
+end  # class Scratchpad::Models::Fpga
+
+# :nodoc: FPGA operation
+class Fpga
   # Establishes a session between a trusted-storage client and the FPGA.
   #
   # Args:
@@ -167,54 +217,7 @@ class Fpga
   def hmac_without_check!(block_number, session_id, nonce, data)
     session_key = @session_keys[session_id]
     Crypto.hmac_for_block block_number, data, nonce, session_key
-  end
-
-  # The FPGA's symmetric key, encrypted under a smart card's endorsement key.
-  #
-  # Args:
-  #   endorsement_cert:: the smartcard's endorsement certificate, issued by the
-  #                      manufacturer
-  #
-  # Returns the FPGA's symmetric key, encrypted under the public key in the
-  # endorsement certificate.
-  #
-  # Raises:
-  #   RuntimeError:: the FPGA is already paired with a smart-card
-  #   RuntimeError:: the endorsement certificate doesn't match the
-  #                  manufacturer's CA key
-  def encrypted_key(endorsement_cert)
-    raise "Already paired" if @efuses
-    
-    unless Crypto.verify_cert endorsement_cert, [@ca_cert]
-      raise "Invalid endorsement certificate"
-    end
-    
-    generate_key
-    Crypto.pki_encrypt endorsement_cert.public_key, @fpga_key
-  end
-
-  # Generates the FPGA's symmetric key.
-  #
-  # This happens when the FPGA is powered up for the first time, in the
-  # manufacturer's facility, before being paired up with a smart-card.
-  def generate_key
-    @fpga_key = Crypto.sk_key
-    @puf = @fpga_key[0...-1]
-    @syndrome = Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
-    @efuses = Crypto.crypto_hash @syndrome
-  end
-  private :generate_key
-  
-  # Recovers the FPGA's symmetric key from the syndrome and PUF.
-  def recover_key
-    0.upto(255).each do |ch|
-      @fpga_key = [@puf, [ch].pack('C')].join
-      if @syndrome == Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
-        break 
-      end
-    end
-  end
-  private :recover_key
+  end  
 end  # class Scratchpad::Models::Fpga
 
 end  # namespace Scratchpad::Models

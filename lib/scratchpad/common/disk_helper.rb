@@ -71,6 +71,11 @@ module DiskHelper
           data_from_padded_block(read_blocks(1, 1)))
     }
   end
+  
+  # The number of initial blocks used for bookkeeping. 
+  def header_blocks
+    2 + HashTree.blocks_on_disk(self, leaf_count)
+  end
     
   # Returns the given data, padded to match the size of the disk's block.
   def pad_to_block_size(data)

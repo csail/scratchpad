@@ -56,7 +56,13 @@ class HashTree
   
   # The number of blocks taken by this tree on a disk.
   def blocks_on_disk(disk)
-    nodes_per_block = self.class.nodes_per_block disk
+    self.class.blocks_on_disk disk, leaf_count
+  end
+  
+  # The number of blocks taken by a tree on a disk.
+  def self.blocks_on_disk(disk, min_leaf_count)
+    nodes_per_block = self.nodes_per_block disk
+    node_count = self.node_count min_leaf_count
     (node_count + nodes_per_block - 1) / nodes_per_block    
   end
   

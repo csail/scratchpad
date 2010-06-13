@@ -16,6 +16,7 @@ class Server
     @fpga = fpga
     @disk = disk
     @ecert = disk.manufacturing_state[:endorsement_cert]
+    @data_start = disk.header_blocks
   end
   
   # Endorsement Certificate for the FPGA on the server.
@@ -37,7 +38,8 @@ class Server
   def session(nonce, encrypted_session_key)
     sid = 0  # TODO(costan): FPGA session allocation
     nonce_hmac = @fpga.establish_session sid, nonce, encrypted_session_key
-    server_session = Session.new @fpga, @disk, sid, encrypted_session_key
+    server_session = Session.new @fpga, @disk, sid, @data_start,
+                                 encrypted_session_key
     { :nonce_hmac => nonce_hmac, :session => server_session }
   end
 end  # class Scratchpad::Server
@@ -47,15 +49,16 @@ class Server
 
 # A session between a trusted-storage server and a client.
 class Session  
-  def initialize(fpga, disk, sid, options = {})
+  def initialize(fpga, disk, sid, data_start, options = {})
     @fpga = fpga
     @disk = disk
-    @sid = sid    
+    @data_start = data_start
+    @sid = sid
   end
 
   # The number of blocks available on the disk.
   def block_count
-    @disk.block_count
+    @disk.block_count - @data_start
   end
   
   # The size of a disk block. All transfers work on blocks.
@@ -78,7 +81,7 @@ class Session
   def read_blocks(start_block, block_count, nonce)
     # TODO(costan): Merkle tree stuff
     
-    data = @disk.read_blocks start_block, block_count
+    data = @disk.read_blocks start_block + @data_start, block_count
     hmacs = (0...block_count).map do |i|
       @fpga.hmac start_block + i, @sid, nonce, data[i * block_size, block_size]
     end
@@ -105,7 +108,7 @@ class Session
       @fpga.update start_block + i, @sid, nonce,
                    data[i * block_size, block_size]      
     end
-    @disk.write_blocks start_block, block_count, data
+    @disk.write_blocks start_block + @data_start, block_count, data
     { :hmacs => hmacs }
   end
 end  # class Scratchpad::Models::Server::Session
