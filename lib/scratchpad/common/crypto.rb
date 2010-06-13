@@ -101,7 +101,7 @@ module Crypto
     
     padding_bytes = (data.length + 1) % cipher.block_size
     padding_bytes = cipher.block_size - padding_bytes if padding_bytes != 0
-    cipher.update [padding_bytes.pack('C'), data, '0' * padding_bytes].join
+    cipher.update [[padding_bytes].pack('C'), data, '0' * padding_bytes].join
   end
   
   # Decrypts a block of data that was previously encrypted with a symmetric key.

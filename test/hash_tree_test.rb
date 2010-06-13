@@ -7,7 +7,7 @@ class HashTreeTest < Test::Unit::TestCase
   
   
   def setup
-    @tree = HashTree.new 1000, empty_block_hash
+    @tree = HashTree.empty_tree 1000, empty_block_hash
     @left_children = [[1, 2], [2, 4], [3, 6], [4, 8]]
     @right_children = [[1, 3], [2, 5], [3, 7], [4, 9]]
     @siblings = [[2, 3], [4, 5], [6, 7], [8, 9]]
@@ -23,7 +23,7 @@ class HashTreeTest < Test::Unit::TestCase
   
   def test_leaf_count
     [[1, 1], [2, 2], [1000, 1024], [1024, 1024]].each do |input, golden|
-      tree = HashTree.new input, empty_block_hash
+      tree = HashTree.empty_tree input, empty_block_hash
       assert_equal golden, tree.leaf_count,
                    "Incorrect leaf count for #{input} min-leaves"
     end
@@ -62,7 +62,9 @@ class HashTreeTest < Test::Unit::TestCase
   end
   
   def test_verify
-    assert_nothing_raised("Initial tree should be fine") { @tree.verify }
+    assert_nothing_raised("Initial tree should be fine") do
+      assert_equal @tree, @tree.verify
+    end
     
     # TODO(costan): rewrite this using serialization once that's nailed down
     @tree.instance_variable_get(:@nodes)[1524] = one_block_hash

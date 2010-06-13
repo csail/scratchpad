@@ -23,21 +23,39 @@ class Fpga
     end
     
     @nonce = Crypto.nonce
-    @booted = false    
+    @syndrome = nil
+    @fpga_key = nil
+    @booted = false
   end
   
   def attributes
     {
-      :ca_cert => Crypto.save_cert(ca_cert),
+      :ca_cert => Crypto.save_cert(@ca_cert),
       :capacity => @cache_capacity,
       :puf => @puf, :fuses => @efuses,      
     }
   end
     
-  # The FPGA nonce, needed by the smart-card to generate the boot parameters.
-  def nonce
+  # Generates the FPGA nonce, used to boot the smart-card.
+  #
+  # Args:
+  #   puf_syndrome:: the information needed to recover the FPGA's symmetric key
+  #                  out of its PUF
+  #
+  # Returns a hash with the following keys:
+  #   :nonce:: a randomly generated nonce
+  #   :hmac:: the nonce's HMAC, keyed under the FPGA's symmetric key
+  def preboot(puf_syndrome)
     raise "Already booted" if @booted
-    @nonce
+    
+    raise "Syndrome already installed" if @syndrome
+    unless @efuses == Crypto.crypto_hash(puf_syndrome)
+      raise "Incorrect PUF syndrome"
+    end
+    @syndrome = puf_syndrome
+    recover_key
+
+    { :nonce => @nonce, :hmac => Crypto.hmac(@fpga_key, @nonce) }
   end
   
   # Information needed to generate the FPGA's symmetric key out of its PUF.
@@ -49,8 +67,6 @@ class Fpga
   # Boots up the FPGA.
   #
   # Args:
-  #   puf_syndrome:: the information needed to recover the FPGA's symmetric key
-  #                  out of its PUF
   #   root_hash:: the storage root key
   #   leaf_count:: number of leaves in the storage tree
   #   root_hmac:: HMAC over the FPGA's nonce, root hash, and leaf count, keyed
@@ -65,18 +81,16 @@ class Fpga
   #   RuntimeError:: if the PUF syndrome doesn't match the cryptographic hash
   #                  stored in the FPGA's e-fuses
   #   RuntimeError:: if the HMAC doesn't match the boot parameters
-  def boot(puf_syndrome, root_hash, leaf_count, root_hmac, endorsement_key)
+  def boot(root_hash, leaf_count, root_hmac, endorsement_key)
     raise "Already booted" if @booted
-    
-    raise "Incorrect PUF syndrome" unless @efuses == Crypto.digest(puf_syndrome)
-    @syndrome = puf_syndrome
-    recover_key
     
     unless root_hmac == Fpga.root_hash_hmac(@fpga_key, @nonce, root_hash,
                                                                leaf_count)
       raise "Incorrect HMAC"
     end
-    @hash_tree_cache = Scratchpad::HashTreeCache.new @capacity, root_hash,
+    @endorsement_key =
+        Crypto.key_pair Crypto.sk_decrypt(@fpga_key, endorsement_key)
+    @hash_tree_cache = Scratchpad::HashTreeCache.new @cache_capacity, root_hash,
                                                      leaf_count
     @booted = true
     @nonce = nil
@@ -95,12 +109,7 @@ class Fpga
   def self.root_hash_hmac(fpga_key, fpga_nonce, root_hash, leaf_count)
     Crypto.hmac fpga_key, [fpga_nonce, [leaf_count].pack('N'), root_hash].join
   end
-    
-  # An OpenSSL endorsement certificate for the FPGA.
-  def endorsement_certificate
-    @endorsement_certificate
-  end
-
+  
   # Establishes a session between a trusted-storage client and the FPGA.
   #
   # Args:
@@ -191,8 +200,8 @@ class Fpga
   def generate_key
     @fpga_key = Crypto.sk_key
     @puf = @fpga_key[0...-1]
-    @syndrome = Crpyto.encrypt(@fpga_key, (0..32).to_a.pack('C*'))
-    @efuses = Crypto.digest @fpga_syndrome
+    @syndrome = Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
+    @efuses = Crypto.crypto_hash @syndrome
   end
   private :generate_key
   
@@ -200,7 +209,9 @@ class Fpga
   def recover_key
     0.upto(255).each do |ch|
       @fpga_key = [@puf, [ch].pack('C')].join
-      break if @syndrome == Crpyto.encrypt(@fpga_key, (0..32).to_a.pack('C*'))
+      if @syndrome == Crypto.sk_encrypt(@fpga_key, (0..32).to_a.pack('C*'))
+        break 
+      end
     end
   end
   private :recover_key

@@ -1,5 +1,6 @@
 require File.expand_path('../helper.rb', __FILE__)
 
+# This test case exercises both Models::Disk and DiskHelper.
 class DiskTest < Test::Unit::TestCase
   Disk = Scratchpad::Models::Disk
   

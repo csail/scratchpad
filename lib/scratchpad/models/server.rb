@@ -15,8 +15,7 @@ class Server
   def initialize(fpga, disk, options = {})    
     @fpga = fpga
     @disk = disk
-
-    @ecert = fpga.endorsement_certificate
+    @ecert = disk.manufacturing_state[:endorsement_cert]
   end
   
   # Endorsement Certificate for the FPGA on the server.

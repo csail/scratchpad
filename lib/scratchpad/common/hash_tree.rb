@@ -10,23 +10,51 @@ class HashTree
   # Creates an empty hash tree.
   #
   # Args:
-  #   leaf_count:: the minimum number of leaf nodes in the tree
+  #   min_leaf_count:: the minimum number of leaf nodes in the tree
   #   initial_leaf:: the initial value for the tree leaves
-  def initialize(leaf_count, initial_leaf)
-    @leaf_count = 1
-    @leaf_count *= 2 while @leaf_count < leaf_count
+  def self.empty_tree(min_leaf_count, initial_leaf)
+    leaf_count = self.leaf_count(min_leaf_count)
     
-    @nodes = Array.new(@leaf_count * 2)
-    0.upto(@leaf_count - 1) { |i| @nodes[@leaf_count + i] = initial_leaf.dup }
-    (@leaf_count - 1).downto(0) do |i|
-      @nodes[i] = HashTree.node_hash i, @nodes[HashTree.left_child(i)],
-                                     @nodes[HashTree.right_child(i)]
+    nodes = Array.new(node_count(min_leaf_count) + 1)
+    0.upto(leaf_count - 1) { |i| nodes[leaf_count + i] = initial_leaf.dup }
+    (leaf_count - 1).downto(1) do |i|
+      nodes[i] = HashTree.node_hash i, nodes[HashTree.left_child(i)],
+                                    nodes[HashTree.right_child(i)]
     end
+    self.new leaf_count, nodes
+  end
+  
+  # The number of leaves in a tree with a given minimum leaf count.
+  def self.leaf_count(min_leaf_count)
+    count = 1
+    count *= 2 while count < min_leaf_count
+    count
+  end
+  
+  # The number of nodes in a tree with a given minimum leaf count.
+  def self.node_count(min_leaf_count)
+    leaf_count(min_leaf_count) * 2 - 1
+  end
+    
+  # Creates a new hash tree.
+  #
+  # This method should not be used directly. Instead, use HashTree#empty_tree or
+  # Hash#from_disk.
+  def initialize(leaf_count, nodes)
+    @leaf_count = leaf_count
+    @nodes = nodes
   end
   
   # The number of leaves in this tree.
   def leaf_count
     @leaf_count
+  end
+  
+  # The number of nodes in a tree.
+  #
+  # Remeber that node indexing starts at 1.
+  def node_count
+    @nodes.length - 1
   end
   
   # The hash value in a node.
@@ -69,6 +97,8 @@ class HashTree
   #
   # Raises an error if the tree fails the integrity check.
   #
+  # Returns self if the tree passes the integrity check.
+  #
   # This method is useful when reading the tree from disk. When used through the
   # API, the tree should always remain valid.
   def verify
@@ -78,6 +108,7 @@ class HashTree
                                    @nodes[HashTree.right_child(node)])
       raise "Tree integrity verification failed"    
     end
+    self
   end
     
   # The set of nodes needed to update or verify the value of a leaf.

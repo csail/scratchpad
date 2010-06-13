@@ -2,8 +2,12 @@ require File.expand_path('../helper.rb', __FILE__)
 
 class ManufacturerTest < Test::Unit::TestCase
   Manufacturer = Scratchpad::Models::Manufacturer
+  Disk = Scratchpad::Models::Disk
   
   def setup
+    @disk = Disk.new(1024 * 64, :block_count => 64).format
+    @hash_tree = @disk.read_hash_tree
+
     @manufacturer = Manufacturer.new
   end
   
@@ -37,20 +41,22 @@ class ManufacturerTest < Test::Unit::TestCase
   end
   
   def test_valid_device_cert
-    pair = @manufacturer.device_pair
+    pair = @manufacturer.device_pair 512, @hash_tree.root_hash,
+                                     @hash_tree.leaf_count
     fpga = pair[:fpga]
     
     manufacturer2 = Manufacturer.new
-    pair2 = manufacturer2.device_pair
+    pair2 = manufacturer2.device_pair 512, @hash_tree.root_hash,
+                                     @hash_tree.leaf_count
     fpga2 = pair2[:fpga]
     
-    assert @manufacturer.valid_device_cert?(fpga.endorsement_certificate),
+    assert @manufacturer.valid_device_cert?(pair[:state][:endorsement_cert]),
            'Manufacturer 1 does not recognize its own device'
-    assert manufacturer2.valid_device_cert?(fpga2.endorsement_certificate),
+    assert manufacturer2.valid_device_cert?(pair2[:state][:endorsement_cert]),
         'Manufacturer 2 does not recognize its own device'
-    assert !@manufacturer.valid_device_cert?(fpga2.endorsement_certificate),
+    assert !@manufacturer.valid_device_cert?(pair2[:state][:endorsement_cert]),
            'Manufacturer 1 validated manufacturer 2 device'
-    assert !manufacturer2.valid_device_cert?(fpga.endorsement_certificate),
+    assert !manufacturer2.valid_device_cert?(pair[:state][:endorsement_cert]),
            'Manufacturer 2 validated manufacturer 1 device'
   end
 end

@@ -7,7 +7,7 @@ class HashTreeCacheDriverTest < Test::Unit::TestCase
   HashTreeCacheDriver = Scratchpad::HashTreeCacheDriver
   
   def setup
-    @tree = HashTree.new 1000, empty_block_hash
+    @tree = HashTree.empty_tree 1000, empty_block_hash
     @cache = HashTreeCache.new 64, @tree.root_hash, @tree.leaf_count
     @driver = HashTreeCacheDriver.new @tree, @cache.entry_count
   end

@@ -8,7 +8,7 @@ class HashTreeCacheTest < Test::Unit::TestCase
   include HashTreeCache::Exceptions
   
   def setup
-    @tree = HashTree.new 1000, empty_block_hash
+    @tree = HashTree.empty_tree 1000, empty_block_hash
     @cache = HashTreeCache.new 64, @tree.root_hash, @tree.leaf_count
 
     @cache.load_entry 1, 2, @tree[2], -1

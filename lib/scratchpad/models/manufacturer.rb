@@ -80,40 +80,43 @@ class Manufacturer
   # Manufactures a new FPGA and smart-card, which are paired.
   #
   # Args:
-  #   root_hash:: the initial storage root hash for the disk which the system
-  #               will be used with
+  #   fpga_capacity:: the capacity of the FPGA's cache
+  #   root_hash:: the root hash for the hard disk that will be secured by this
+  #               smart-card / FPGA pair
+  #   leaf_count:: the number of leaves in the disk's hash tree    
   #
   # Returns: a Hash with the following keys:
   #   :fpga:: the new FPGA
-  #   :card:: the new smart-card  
-  def device_pair(root_hash, leaf_count)
+  #   :card:: the new smart-card
+  def device_pair(fpga_capacity, root_hash, leaf_count)
     card = Smartcard.new
-    fpga = Fpga.new :ca_cert => @ca_cert
+    fpga = Fpga.new :capacity => fpga_capacity, :ca_cert => root_certificate
     
     public_ek = card.public_ek    
     endorsement_cert = Crypto.cert device_distinguished_name, 3 * 365,
                                    @ca_keys, @ca_cert, public_ek
                                    
     encrypted_fpga_key = fpga.encrypted_key endorsement_cert
-    smartcard.bind_to_fpga encrypted_fpga_key, root_hash, leaf_count
-
-    fpga = Fpga.new :ecert => endorsement_cert, :ekey => endorsement_key
-    { :card => card, :fpga => fpga }
+    card.bind_to_fpga encrypted_fpga_key, root_hash, leaf_count
+    
+    { :card => card, :fpga => fpga,
+      :state => { :puf_syndrome => fpga.puf_syndrome,
+                  :endorsement_cert => endorsement_cert } }
   end
   
   # Boots up a paired FPGA and smart-card.
   #
   # Args:
   #   fpga:: the paired-up FPGA
-  #   smartcard:: the paird-up smart-card
+  #   card:: the paird-up smart-card
   #   disk:: the disk in the paired-up system
   #
   # The return value is unspecified.
-  def self.boot_pair(fpga, smartcard, disk)
-    nonce = fpga.nonce
-    response = smartcard.fpga_challenge nonce
-    fpga.boot disk.puf_syndrome, response[:root_key], disk.leaf_count,
-              response[:private_key]
+  def self.boot_pair(fpga, card, disk)
+    f_response = fpga.preboot disk.manufacturing_state[:puf_syndrome]
+    response = card.boot f_response[:nonce], f_response[:hmac]
+    fpga.boot response[:root_hash], HashTree.leaf_count(disk.leaf_count),
+              response[:root_hmac], response[:private_key]
   end
   
   # The DN in a trusted device certificate. 
