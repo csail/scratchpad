@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["costan"]
-  s.date = %q{2010-06-16}
+  s.date = %q{2010-06-17}
   s.description = %q{Proof-of-concept models for a system that trusts an FPGA and a smart-card chip
 for integrity verification of an untrusted storage medium.
 }
@@ -43,6 +43,7 @@ for integrity verification of an untrusted storage medium.
      "lib/scratchpad/dev_keys/manufacturer.yml",
      "lib/scratchpad/ethernet/ping.rb",
      "lib/scratchpad/ethernet/raw_ethernet.rb",
+     "lib/scratchpad/fpga/ether_echo.bit",
      "lib/scratchpad/fpga/provision.rb",
      "lib/scratchpad/models/client.rb",
      "lib/scratchpad/models/disk.rb",

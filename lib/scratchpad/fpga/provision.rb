@@ -35,6 +35,11 @@ module Provision
     File.unlink log_file if File.exist? log_file
     success
   end
+  
+  # FPGA firmware that echoes Ethernet packages.
+  def self.echo_bitfile
+    File.expand_path('../ether_echo.bit', __FILE__)
+  end
 
   # The contents of a Xilinx impact batch file for programming a FPGA.
   #
