@@ -1,0 +1,26 @@
+# The script for the Quanta demo.
+
+fpga_deploy
+ssc_server_fmt
+
+ssc_server
+ssc_client write ~/Downloads/lolcat1.jpg 1 localhost
+ssc_client read ~/Downloads/lolcat1_read.jpg 1 localhost
+
+# Close server
+cp disk.yml disk1.yml
+ssc_server
+ssc_client write ~/Downloads/lolcat2.jpg 1 localhost
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
+# Delete lolcat2_read.jpg
+
+# Close server
+cp disk.yml disk2.yml
+cp disk1.yml disk.yml
+ssc_server
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
+
+# Close server
+cp disk2.yml disk.yml
+ssc_server
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
