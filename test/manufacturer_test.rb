@@ -5,7 +5,7 @@ class ManufacturerTest < Test::Unit::TestCase
   Disk = Scratchpad::Models::Disk
   
   def setup
-    @disk = Disk.new(1024 * 64, :block_count => 64).format
+    @disk = Disk.empty_disk(1024 * 64, :block_count => 64).format
     @hash_tree = @disk.read_hash_tree
 
     @manufacturer = Manufacturer.new

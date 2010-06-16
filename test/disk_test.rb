@@ -5,7 +5,7 @@ class DiskTest < Test::Unit::TestCase
   Disk = Scratchpad::Models::Disk
   
   def setup
-    @disk = Disk.new 64 * 1024, :block_count => 64    
+    @disk = Disk.empty_disk 64 * 1024, :block_count => 64    
   end
   
   def test_block_size
@@ -34,5 +34,14 @@ class DiskTest < Test::Unit::TestCase
     block = "0123456" * @disk.block_size
     @disk.write_blocks 29, 7, block
     assert_equal block, @disk.read_blocks(29, 7), "Incorrect block contents"    
+  end
+  
+  def test_serialization
+    block = "0123456" * @disk.block_size
+    @disk.write_blocks 29, 7, block
+
+    @disk = Disk.new @disk.attributes
+    assert_equal block, @disk.read_blocks(29, 7), "Incorrect block contents"    
+    assert_equal 64, @disk.block_count, "Incorrect block count"
   end
 end

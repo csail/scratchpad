@@ -9,7 +9,7 @@ class HashTreeOnDiskTest < Test::Unit::TestCase
   def setup
     @min_leaf_count = 1000
     @tree = HashTree.empty_tree @min_leaf_count, empty_block_hash
-    @disk = Disk.new 4096, :block_count => @min_leaf_count
+    @disk = Disk.empty_disk 4096, :block_count => @min_leaf_count
   end
   
   def empty_block_hash

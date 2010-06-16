@@ -15,16 +15,33 @@ module Models
 class Disk
   include Scratchpad::DiskHelper
   
+  
   # Creates a new disk model.
   #
   # Args:
   #   block_size:: the application-desired block size, in bytes
   #   options:: a Symbol-indexed Hash with model-dependent options; the
   #             RAM-backed disk model takes :block_count as an argument
-  def initialize(block_size, options = {})
-    @block_size = block_size
-    @block_count = options[:block_count] || 1024
-    @blocks = Array.new(@block_count)
+  def self.empty_disk(block_size, options = {})
+    empty_block = "\0" * block_size
+    block_count = options[:block_count] || 1024
+    self.new :block_size => block_size, :block_count => block_count,
+             :blocks => Array.new(block_count) { empty_block.dup }
+  end
+  
+  # De-serializes a disk model from the hash produced by Attributes.
+  def initialize(attributes)
+    @block_size = attributes[:block_size]
+    @block_count = attributes[:block_count]
+    @blocks = attributes[:blocks].map { |block| block.dup }    
+  end
+
+  # Serializes this disk model to a Hash of primitives.
+  def attributes
+    {
+      :block_size => @block_size, :block_count => @block_count,
+      :blocks => @blocks.map { |block| block.dup }
+    }
   end
   
   # The number of blocks available on the disk.
