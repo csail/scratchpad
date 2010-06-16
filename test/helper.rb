@@ -27,7 +27,11 @@ class IntegrationTestBase < Test::Unit::TestCase
     Manufacturer.boot_pair @fpga, pair[:card], @disk
     
     @server = Server.new @fpga, @disk
-    @client = new_client    
+    @client = new_client
+  end
+  
+  def teardown
+    @client.close
   end
   
   def new_client

@@ -1,6 +1,5 @@
 require 'socket'
 
-
 # :nodoc: namespace
 module Scratchpad
 

@@ -15,8 +15,9 @@ END
     gem.authors = ["costan"]
     gem.add_development_dependency "fakefs", ">=0.2.1"
     gem.add_development_dependency "jeweler",  ">=1.4.0"
-    gem.add_runtime_dependency "ffi", ">=0.6.3"
     gem.add_runtime_dependency "eventmachine", ">=0.12.10"
+    gem.add_runtime_dependency "ffi", ">=0.6.3"
+    gem.add_runtime_dependency "json", ">=1.4.3"
   end
   Jeweler::GemcutterTasks.new
 rescue LoadError

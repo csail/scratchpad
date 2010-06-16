@@ -20,7 +20,7 @@ class Server
     @tree = disk.read_hash_tree
     @tree_driver = HashTreeCacheDriver.new @tree, fpga.capacity
   end
-  
+    
   # Endorsement Certificate for the FPGA on the server.
   def endorsement_certificate
     @ecert
@@ -68,6 +68,11 @@ class Session
   # The size of a disk block. All transfers work on blocks.
   def block_size
     @disk.block_size
+  end
+  
+  # Closes the session.
+  def close
+    @fpga.close_session @sid
   end
   
   # Read operation.

@@ -1,6 +1,5 @@
 require 'eventmachine'
 
-
 # :nodoc: namespace
 module Scratchpad
 

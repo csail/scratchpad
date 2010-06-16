@@ -182,6 +182,14 @@ class Fpga
     Crypto.hmac session_key, nonce
   end
   
+  # Tears down a session between a trusted-storage client and the FPGA.
+  #
+  # Returns self.
+  def close_session(session_id)
+    @session_keys.delete session_id
+    self
+  end
+  
   # The main communication method with the storage server.
   #
   # The ops argument is a buffer of operations. Each operation is executed

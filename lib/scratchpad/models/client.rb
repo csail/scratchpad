@@ -41,6 +41,11 @@ class Client
     @block_count
   end
   
+  # Tears down the session with the server.
+  def close
+    @session.close
+  end
+  
   # Read operation.
   #
   # Args:
