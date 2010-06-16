@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["costan"]
-  s.date = %q{2010-06-13}
+  s.date = %q{2010-06-16}
   s.description = %q{Proof-of-concept models for a system that trusts an FPGA and a smart-card chip
 for integrity verification of an untrusted storage medium.
 }
@@ -29,12 +29,15 @@ for integrity verification of an untrusted storage medium.
      "bin/enable_pcap",
      "bin/ether_ping",
      "bin/ether_ping_server",
+     "bin/fpga_deploy",
      "bin/fpga_setup",
      "lib/scratchpad.rb",
      "lib/scratchpad/common/crypto.rb",
+     "lib/scratchpad/common/disk_helper.rb",
      "lib/scratchpad/common/hash_tree.rb",
      "lib/scratchpad/common/hash_tree_cache.rb",
      "lib/scratchpad/common/hash_tree_cache_driver.rb",
+     "lib/scratchpad/common/hash_tree_on_disk.rb",
      "lib/scratchpad/dev_keys/manufacturer.crt",
      "lib/scratchpad/dev_keys/manufacturer.key.der",
      "lib/scratchpad/dev_keys/manufacturer.yml",
@@ -52,6 +55,7 @@ for integrity verification of an untrusted storage medium.
      "test/fpga_provisioning_test.rb",
      "test/hash_tree_cache_driver_test.rb",
      "test/hash_tree_cache_test.rb",
+     "test/hash_tree_on_disk_test.rb",
      "test/hash_tree_test.rb",
      "test/helper.rb",
      "test/integration_test.rb",
@@ -72,7 +76,8 @@ for integrity verification of an untrusted storage medium.
      "test/hash_tree_cache_test.rb",
      "test/fpga_provisioning_test.rb",
      "test/disk_test.rb",
-     "test/helper.rb"
+     "test/helper.rb",
+     "test/hash_tree_on_disk_test.rb"
   ]
 
   if s.respond_to? :specification_version then
