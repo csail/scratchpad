@@ -2,7 +2,7 @@
 require 'rubygems'
 require 'scratchpad'
 
-if ARGV.length > 2
+if ARGV.length > 4
   print <<END_USAGE
 Usage: #{$0} [port] [disk] [fpga] [smartcard]
   port: the port to run the server on (default: 8990)

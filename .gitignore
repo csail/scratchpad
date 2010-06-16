@@ -1,8 +1,5 @@
 .loadpath
 *~
-disk.yml
-fpga.yml
-smartcard.yml
+*.yml
 coverage
 pkg
-

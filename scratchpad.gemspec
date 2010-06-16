@@ -31,6 +31,7 @@ for integrity verification of an untrusted storage medium.
      "bin/ether_ping_server",
      "bin/fpga_deploy",
      "bin/fpga_setup",
+     "bin/ssc_client",
      "bin/ssc_server",
      "bin/ssc_server_fmt",
      "lib/scratchpad.rb",
