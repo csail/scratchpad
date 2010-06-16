@@ -92,6 +92,7 @@ class Session
             :block => start_block + i }
       add_tree_data_to_ops load_data[:ops]
       response = @fpga.perform_ops load_data[:ops]
+      @tree_driver.perform_ops load_data[:ops]
       response.first
     end
     { :data => data, :hmacs => hmacs }
@@ -121,6 +122,7 @@ class Session
             :block => start_block + i, :session_id => @sid }
       add_tree_data_to_ops load_data[:ops]
       response = @fpga.perform_ops load_data[:ops]
+      @tree_driver.perform_ops load_data[:ops]
       response.first
     end
     @disk.write_blocks start_block + @data_start, block_count, data

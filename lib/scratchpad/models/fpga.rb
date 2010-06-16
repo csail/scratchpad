@@ -206,6 +206,7 @@ class Fpga
         raise "Invalid operation type #{op[:op]}"
       end
     end
+    response
   end
   
   # Certifies a block's contents.
