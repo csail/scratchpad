@@ -15,15 +15,14 @@ class Smartcard
       @fpga_key = attributes[:fkey]
       @root_hash = attributes[:rhash]
       @leaf_count = attributes[:leaves]
-      @booted = attributes[:booted]
     else
       # Manufacturing a new card.
       @endorsement_key = Crypto.key_pair
       @fpga_key = nil
       @root_hash = nil
       @leaf_count = nil
-      @booted = false
     end
+    @booted = false
   end
   
   # The smart-card state, persisted in the card's secure, non-volatile RAM.
@@ -32,8 +31,7 @@ class Smartcard
       :ekey => Crypto.save_key_pair(@endorsement_key),
       :fkey => @fpga_key,
       :rhash => @root_hash,
-      :leaves => @leaf_count,
-      :booted => @booted
+      :leaves => @leaf_count
     }
   end
   

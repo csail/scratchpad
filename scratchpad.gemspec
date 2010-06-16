@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 for integrity verification of an untrusted storage medium.
 }
   s.email = %q{victor@costan.us}
-  s.executables = ["ether_ping_server", "enable_pcap", "fpga_deploy", "fpga_setup", "ether_ping"]
+  s.executables = ["ether_ping_server", "ssc_client", "ssc_server", "enable_pcap", "fpga_deploy", "fpga_setup", "ssc_server_fmt", "ether_ping"]
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
@@ -31,6 +31,8 @@ for integrity verification of an untrusted storage medium.
      "bin/ether_ping_server",
      "bin/fpga_deploy",
      "bin/fpga_setup",
+     "bin/ssc_server",
+     "bin/ssc_server_fmt",
      "lib/scratchpad.rb",
      "lib/scratchpad/common/crypto.rb",
      "lib/scratchpad/common/disk_helper.rb",
@@ -51,6 +53,8 @@ for integrity verification of an untrusted storage medium.
      "lib/scratchpad/models/manufacturer.rb",
      "lib/scratchpad/models/server.rb",
      "lib/scratchpad/models/smartcard.rb",
+     "lib/scratchpad/protocols/server.rb",
+     "lib/scratchpad/protocols/server_client.rb",
      "scratchpad.gemspec",
      "test/disk_test.rb",
      "test/fpga_provisioning_test.rb",
@@ -61,7 +65,9 @@ for integrity verification of an untrusted storage medium.
      "test/helper.rb",
      "test/integration_test.rb",
      "test/manufacturer_test.rb",
-     "test/raw_ethernet_test.rb"
+     "test/raw_ethernet_test.rb",
+     "test/security_test.rb",
+     "test/server_protocol_test.rb"
   ]
   s.homepage = %q{http://github.com/costan/scratchpad}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -73,10 +79,12 @@ for integrity verification of an untrusted storage medium.
      "test/manufacturer_test.rb",
      "test/hash_tree_test.rb",
      "test/raw_ethernet_test.rb",
+     "test/server_protocol_test.rb",
      "test/integration_test.rb",
      "test/hash_tree_cache_test.rb",
      "test/fpga_provisioning_test.rb",
      "test/disk_test.rb",
+     "test/security_test.rb",
      "test/helper.rb",
      "test/hash_tree_on_disk_test.rb"
   ]
@@ -88,19 +96,22 @@ for integrity verification of an untrusted storage medium.
     if Gem::Version.new(Gem::VERSION) >= Gem::Version.new('1.2.0') then
       s.add_development_dependency(%q<fakefs>, [">= 0.2.1"])
       s.add_development_dependency(%q<jeweler>, [">= 1.4.0"])
-      s.add_runtime_dependency(%q<ffi>, [">= 0.6.3"])
       s.add_runtime_dependency(%q<eventmachine>, [">= 0.12.10"])
+      s.add_runtime_dependency(%q<ffi>, [">= 0.6.3"])
+      s.add_runtime_dependency(%q<json>, [">= 1.4.3"])
     else
       s.add_dependency(%q<fakefs>, [">= 0.2.1"])
       s.add_dependency(%q<jeweler>, [">= 1.4.0"])
-      s.add_dependency(%q<ffi>, [">= 0.6.3"])
       s.add_dependency(%q<eventmachine>, [">= 0.12.10"])
+      s.add_dependency(%q<ffi>, [">= 0.6.3"])
+      s.add_dependency(%q<json>, [">= 1.4.3"])
     end
   else
     s.add_dependency(%q<fakefs>, [">= 0.2.1"])
     s.add_dependency(%q<jeweler>, [">= 1.4.0"])
-    s.add_dependency(%q<ffi>, [">= 0.6.3"])
     s.add_dependency(%q<eventmachine>, [">= 0.12.10"])
+    s.add_dependency(%q<ffi>, [">= 0.6.3"])
+    s.add_dependency(%q<json>, [">= 1.4.3"])
   end
 end
 

@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+require 'yaml'
+
+if ARGV.length > 5
+  print <<END_USAGE
+Usage: #{$0} [blocks] [block_size] [disk] [fpga] [smartcard]
+  blocks: disk block count (default 128)
+  block_size: disk block size (default 65536)
+  disk: the file holding disk state (default disk.yml)
+  fpga: the file holding FPGA state (default fpga.yml)
+  smartcard: the file holding smart-card state (default smartcard.yml)
+END_USAGE
+  exit 1
+end
+
+block_count = (ARGV[0] || '128').to_i
+block_size = (ARGV[1] || '65536').to_i
+disk_file = ARGV[2] || 'disk.yml'
+fpga_file = ARGV[3] || 'fpga.yml'
+smartcard_file = ARGV[4] || 'smartcard.yml'
+
+disk = Scratchpad::Models::Disk.
+    empty_disk(block_size, :block_count => block_count).format
+hash_tree = disk.read_hash_tree
+
+manufacturer = Scratchpad::Models::Manufacturer.dev_instance
+pair = manufacturer.device_pair 512, hash_tree.root_hash, hash_tree.leaf_count
+disk.write_manufacturing_state pair[:state]
+
+File.open(disk_file, 'w') do |f|
+  YAML.dump disk.attributes, f
+end
+File.open(fpga_file, 'w') do |f|
+  YAML.dump pair[:fpga].attributes, f
+end
+File.open(smartcard_file, 'w') do |f|
+  YAML.dump pair[:card].attributes, f
+end

@@ -1,0 +1,40 @@
+#!/usr/bin/env ruby
+require 'rubygems'
+require 'scratchpad'
+
+if ARGV.length > 2
+  print <<END_USAGE
+Usage: #{$0} [port] [disk] [fpga] [smartcard]
+  port: the port to run the server on (default: 8990)
+  disk: the file holding disk state (default disk.yml)
+  fpga: the file holding FPGA state (default fpga.yml)
+  smartcard: the file holding smart-card state (default smartcard.yml)  
+END_USAGE
+  exit 1
+end
+
+port = (ARGV[0] || '8990').to_i
+@disk_file = ARGV[1] || 'disk.yml'
+@fpga_file = ARGV[2] || 'fpga.yml'
+@smartcard_file = ARGV[3] || 'smartcard.yml'
+@disk = Scratchpad::Models::Disk.new(
+    File.open(@disk_file, 'r') { |f| YAML.load f })
+@fpga = Scratchpad::Models::Fpga.new(
+    File.open(@fpga_file, 'r') { |f| YAML.load f })
+@smartcard = Scratchpad::Models::Smartcard.new(
+    File.open(@smartcard_file, 'r') { |f| YAML.load f })
+
+Scratchpad::Models::Manufacturer.boot_pair @fpga, @smartcard, @disk
+server_model = Scratchpad::Models::Server.new @fpga, @disk
+@server = Scratchpad::Protocols::Server.new server_model, port
+
+Thread.abort_on_exception = true
+STDERR.sync = true
+Thread.new { @server.run }
+
+puts "Press Return to stop the server"
+STDIN.getc
+@server.close
+File.open(@disk_file, 'w') { |f| YAML.dump @disk.attributes, f }
+File.open(@fpga_file, 'w') { |f| YAML.dump @fpga.attributes, f }
+File.open(@smartcard_file, 'w') { |f| YAML.dump @smartcard.attributes, f }
