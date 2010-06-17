@@ -4,8 +4,9 @@ require 'scratchpad'
 
 if ARGV.length > 4
   print <<END_USAGE
-Usage: #{$0} [port] [disk] [fpga] [smartcard]
+Usage: #{$0} [port] [fpga_eth] [disk] [fpga] [smartcard]
   port: the port to run the server on (default: 8990)
+  fpga_eth: the Ethernet interface that the FPGA is attached to (e.g., eth0)
   disk: the file holding disk state (default disk.yml)
   fpga: the file holding FPGA state (default fpga.yml)
   smartcard: the file holding smart-card state (default smartcard.yml)  
@@ -14,17 +15,19 @@ END_USAGE
 end
 
 port = (ARGV[0] || '8990').to_i
-@disk_file = ARGV[1] || 'disk.yml'
-@fpga_file = ARGV[2] || 'fpga.yml'
-@smartcard_file = ARGV[3] || 'smartcard.yml'
+fpga_eth = ARGV[1] || 'eth0'
+@disk_file = ARGV[2] || 'disk.yml'
+@fpga_file = ARGV[3] || 'fpga.yml'
+@smartcard_file = ARGV[4] || 'smartcard.yml'
 @disk = Scratchpad::Models::Disk.new(
     File.open(@disk_file, 'r') { |f| YAML.load f })
-@fpga = Scratchpad::Models::Fpga.new(
+fpga = Scratchpad::Models::Fpga.new(
     File.open(@fpga_file, 'r') { |f| YAML.load f })
+@fpga = Scratchpad::Protocols::FpgaClient.new fpga, fpga_eth
 @smartcard = Scratchpad::Models::Smartcard.new(
     File.open(@smartcard_file, 'r') { |f| YAML.load f })
 
-Scratchpad::Models::Manufacturer.boot_pair @fpga, @smartcard, @disk
+Scratchpad::Models::Manufacturer.boot_pair fpga, @smartcard, @disk
 server_model = Scratchpad::Models::Server.new @fpga, @disk
 @server = Scratchpad::Protocols::Server.new server_model, port
 
