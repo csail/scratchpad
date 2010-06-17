@@ -14,7 +14,7 @@ class Server
     @done = false
     @server = server
     @socket = Socket.new Socket::AF_INET, Socket::SOCK_STREAM, 0
-    sockaddr = Socket.pack_sockaddr_in port, 'localhost'
+    sockaddr = Socket.pack_sockaddr_in port, host
     @socket.bind sockaddr
     @socket.listen 5
   end
