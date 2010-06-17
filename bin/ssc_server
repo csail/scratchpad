@@ -39,5 +39,5 @@ puts "Press Return to stop the server"
 STDIN.getc
 @server.close
 File.open(@disk_file, 'w') { |f| YAML.dump @disk.attributes, f }
-File.open(@fpga_file, 'w') { |f| YAML.dump @fpga.attributes, f }
+File.open(@fpga_file, 'w') { |f| YAML.dump fpga.attributes, f }
 File.open(@smartcard_file, 'w') { |f| YAML.dump @smartcard.attributes, f }
