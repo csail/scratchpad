@@ -3,23 +3,23 @@
 fpga_deploy
 ssc_server_fmt 128 65536 /media/ssc_disk/disk.yml
 
-ssc_server 8990 eth0 /media/ssc_disk/disk.yml
-ssc_client write ~/Downloads/lolcat1.jpg 1 localhost
-ssc_client read ~/Downloads/lolcat1_read.jpg 1 localhost
+sudo ssc_server 8990 eth0 /media/ssc_disk/disk.yml
+ssc_client write ~/Downloads/lolcat1.jpg 1 pwnage.local
+ssc_client read ~/Downloads/lolcat1_read.jpg 1 pwnage.local
 
 # Close server. Insert disk 2.
 cp /media/ssc_disk/disk.yml /media/ssc_disk_/disk.yml
 # Remove both disks, then plug in a disk.
-ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
-ssc_client write ~/Downloads/lolcat2.jpg 1 localhost
-ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
+sudp ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
+ssc_client write ~/Downloads/lolcat2.jpg 1 pwnage.local
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 pwnage.local
 # Delete lolcat2_read.jpg
 
 # Close server. Swap the disks.
-ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
-ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
+sudo ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 pwnage.local
 
 # Close server. Swap the disks again.
 cp disk2.yml disk.yml
-ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
-ssc_client read ~/Downloads/lolcat2_read.jpg 1 localhost
+sudo ssc_server 8990 eth0 /media/ssc_disk/disk.yml  # Up key.
+ssc_client read ~/Downloads/lolcat2_read.jpg 1 pwnage.local
