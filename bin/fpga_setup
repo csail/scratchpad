@@ -2,4 +2,4 @@
 require 'rubygems'
 require 'scratchpad'
 
-Scratchpad::Fpga::Provision.install_cable_driver
+Scratchpad::Fpga::Provision.setup_xilinx_cable
