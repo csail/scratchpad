@@ -109,6 +109,12 @@ END_BATCHFILE
     udev_fw_rules = File.read File.join(xilinx_bin_path, 'xusbdfwu.rules')
     [['TEMPNODE', 'tempnode'], ['SYSFS', 'ATTRS'],
      ['BUS', 'SUBSYSTEMS']].each { |from, to| udev_fw_rules.gsub! from, to }
+    
+    udev_fw_rules.gsub!(/ \S+\.hex /) do |filepath|
+      fw_name = File.basename(filepath.strip)
+      ' ' + File.join(xilinx_bin_path, fw_name) + ' '
+    end
+      
     udev_fw_file = '/etc/udev/rules.d/71-xilinx-usb-firmware-upload.rules'
     File.open(udev_fw_file, 'w') { |f| f.write udev_fw_rules }    
   end
