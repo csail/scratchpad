@@ -28,3 +28,13 @@ t1 = Time.now
 
 puts "Time: #{t1 - t0}s\n"
 puts "Digests match: #{digests == gold_digests}."
+
+puts "Golden digests:"
+gold_digests.each_with_index do |digest, index|
+  puts "  D#{index}: " + digest.unpack('C*').map { |c| "%02X " % c }.join
+end
+
+puts "FPGA digests:"
+digests.each_with_index do |digest, index|
+  puts "  D#{index}: " + digest.unpack('C*').map { |c| "%02X " % c }.join
+end

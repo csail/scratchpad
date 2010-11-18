@@ -58,9 +58,10 @@ class FpgaClient
       @ping.socket.send packet, 0
     end
     
+    digest_length = 20
     loop do
       packet = @ping.socket.recv 1600
-      next unless packet[0, recv_header.length] == recv_header.length
+      next unless packet[0, recv_header.length] == recv_header
       
       digests = []
       blocks.each_index do |i|
