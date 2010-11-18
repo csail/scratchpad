@@ -1,0 +1,30 @@
+#!/usr/bin/ruby
+require 'rubygems'
+require 'scratchpad'
+
+require 'digest/sha1'
+
+if ARGV.length < 2
+  print <<END_USAGE
+Usage: #{$0} net_interface ether_type dest_mac data
+  net_interface: name of the Ethernet interface, e.g. eth0
+  block_size: size of a block in the SHA-1 benchmark
+END_USAGE
+  exit 1
+end
+ 
+interface = ARGV[0]
+block_size = ARGV[1].to_i
+
+blocks = (0...4).map { |i| Array.new(block_size, i).pack('C*') }
+gold_digests = blocks.map { |block| Digest::SHA1.digest block }
+
+
+
+client = Scratchpad::Protocols::FpgaClient.new nil, interface
+t0 = Time.now
+digests = client.do_digests blocks
+t1 = Time.now
+
+puts "Time: #{t1 - t0}s\n"
+puts "Digests match: #{digests == gold_digests}."

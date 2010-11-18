@@ -63,6 +63,10 @@ class PingClient
     @ether_type = [ether_type].pack('n')    
   end
   
+  attr_reader :socket
+  attr_reader :source_mac
+  attr_reader :dest_mac
+  
   # Pings over raw Ethernet sockets.
   #
   # Returns true if the ping receives a response, false otherwise.
