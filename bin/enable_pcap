@@ -7,6 +7,9 @@ end
 
 def enable_pcap_on_linux()
   success = Kernel.system(
+      "setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' /usr/bin/ruby1.8")
+  success ? 'Must be root or run via sudo' : nil
+  success = Kernel.system(
       "setcap 'CAP_NET_RAW+eip CAP_NET_ADMIN+eip' /usr/bin/dumpcap")
   success ? 'Must be root or run via sudo' : nil
 end
