@@ -84,12 +84,18 @@ class FpgaClient
   
   def perform_ops(ops)
     ping_fpga
-    @fpga.perform_ops ops
+    begin
+      @fpga.perform_ops ops
+    rescue SecurityError => e
+      ping_fpga true
+      raise
+    end
   end
   
-  def ping_fpga
+  def ping_fpga(error = false)
     @counter += 1
-    @ping.ping [@counter].pack('N').reverse if @ping
+    message = error ? "\xBD\x00\x01\x02" : "\xAA\x00\x01\x02"
+    @ping.ping message if @ping
   end
   private :ping_fpga
 end  # class Scratchpad::Protocols::FpgaClient
